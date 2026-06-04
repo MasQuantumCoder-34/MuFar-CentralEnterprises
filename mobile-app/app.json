@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Mufar Commerce",
+    "slug": "mufar-commerce",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a5632"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mufartec.mufarcommerce"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a5632"
+      },
+      "package": "com.mufartec.mufarcommerce"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
