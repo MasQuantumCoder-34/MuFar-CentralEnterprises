@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Store, Eye, EyeOff, AlertCircle, WifiOff } from 'lucide-react';
+import { Store, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { IUser, ILoginResponse } from '@/types';
 import api from '@/lib/api';
@@ -91,8 +91,6 @@ export default function LoginPage() {
   const { setUser, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [demoMode, setDemoMode] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -106,25 +104,8 @@ export default function LoginPage() {
     return null;
   }
 
-  const doDemoLogin = (email: string, password: string) => {
-    const demo = DEMO_USERS[email.toLowerCase()];
-    if (!demo || demo.password !== password) return false;
-    const demoToken = 'demo-jwt-token-' + Date.now();
-    setToken(demoToken);
-    localStorage.setItem('refreshToken', demoToken);
-    localStorage.setItem('user', JSON.stringify(demo.user));
-    localStorage.setItem('demo_mode', 'true');
-    setUser(demo.user);
-    return true;
-  };
-
   const onSubmit = async (data: LoginForm) => {
     setError('');
-    if (doDemoLogin(data.email, data.password)) {
-      toast.success('Demo login successful');
-      router.push('/dashboard');
-      return;
-    }
     try {
       const res = await api.post('/auth/login', { email: data.email, password: data.password });
       const { accessToken, refreshToken, user: userData } = (res.data as any).data as ILoginResponse;
@@ -140,6 +121,20 @@ export default function LoginPage() {
       toast.success('Login successful');
       router.push('/dashboard');
     } catch (err: any) {
+      if (!err?.response) {
+        const demo = DEMO_USERS[data.email.toLowerCase()];
+        if (demo && demo.password === data.password) {
+          const demoToken = 'demo-jwt-token-' + Date.now();
+          setToken(demoToken);
+          localStorage.setItem('refreshToken', demoToken);
+          localStorage.setItem('user', JSON.stringify(demo.user));
+          localStorage.setItem('demo_mode', 'true');
+          setUser(demo.user);
+          toast.success('Offline mode — using demo account');
+          router.push('/dashboard');
+          return;
+        }
+      }
       const msg = err?.response?.data?.message || 'Invalid email or password';
       setError(msg);
       toast.error(msg);
@@ -157,12 +152,7 @@ export default function LoginPage() {
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
-          {demoMode && (
-            <div className="mb-4 flex items-center gap-2 rounded-md bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400">
-              <WifiOff className="h-4 w-4 shrink-0" />
-              <span>Offline demo mode — use demo credentials below</span>
-            </div>
-          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
