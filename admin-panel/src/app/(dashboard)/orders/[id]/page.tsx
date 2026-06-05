@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '@/lib/api';
-import { apiFallback, DEMO_ORDERS } from '@/lib/demoData';
 import StatusBadge from '@/components/shared/StatusBadge';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
@@ -71,10 +70,7 @@ export default function OrderDetailPage() {
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', id],
-    queryFn: () => apiFallback(
-      () => api.get<IApiResponse<IOrder>>(`/orders/${id}`).then(r => r.data.data!),
-      DEMO_ORDERS.find(o => o._id === id) || DEMO_ORDERS[0]
-    ),
+    queryFn: () => api.get<IApiResponse<IOrder>>(`/orders/${id}`).then(r => r.data.data!),
   });
 
   const form = useForm<StatusUpdateForm>({

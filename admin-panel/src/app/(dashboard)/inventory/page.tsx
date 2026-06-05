@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '@/lib/api';
-import { apiFallback, DEMO_PRODUCTS } from '@/lib/demoData';
 import DataTable from '@/components/shared/DataTable';
 import SearchInput from '@/components/shared/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -65,29 +64,23 @@ export default function InventoryPage() {
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['inventory', page, limit, search],
-    queryFn: () => apiFallback(
-      async () => {
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('limit', String(limit));
-        if (search) params.set('search', search);
-        const res = await api.get<IApiResponse<IProduct[]>>(`/products?${params}`);
-        if (res.data.meta) setTotal(res.data.meta.total);
-        return res.data.data || [];
-      },
-      DEMO_PRODUCTS
-    ),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      if (search) params.set('search', search);
+      const res = await api.get<IApiResponse<IProduct[]>>(`/products?${params}`);
+      if (res.data.meta) setTotal(res.data.meta.total);
+      return res.data.data || [];
+    },
   });
 
   const { data: inventoryLogs } = useQuery({
     queryKey: ['inventory-logs'],
-    queryFn: () => apiFallback(
-      async () => {
-        const res = await api.get<IApiResponse<IInventoryLog[]>>('/inventory/logs?limit=10');
-        return res.data.data || [];
-      },
-      [] as IInventoryLog[]
-    ),
+    queryFn: async () => {
+      const res = await api.get<IApiResponse<IInventoryLog[]>>('/inventory/logs?limit=10');
+      return res.data.data || [];
+    },
   });
 
   const adjustMutation = useMutation({

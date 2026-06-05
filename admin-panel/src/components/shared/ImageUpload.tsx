@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
 
 interface ImageUploadProps {
   images: string[];
@@ -29,10 +30,12 @@ export default function ImageUpload({
         for (const file of Array.from(files)) {
           formData.append('images', file);
         }
-        const res = await fetch('/api/upload', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.urls) {
-          onChange([...images, ...data.urls].slice(0, maxImages));
+        const res = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const urls = res.data?.data?.urls;
+        if (urls) {
+          onChange([...images, ...urls].slice(0, maxImages));
         }
       } catch (err) {
         console.error('Upload failed', err);

@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '@/lib/api';
-import { apiFallback, DEMO_CLIENTS } from '@/lib/demoData';
 import DataTable from '@/components/shared/DataTable';
 import SearchInput from '@/components/shared/SearchInput';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
@@ -72,19 +71,16 @@ export default function ClientsPage() {
 
   const { data: clients, isLoading } = useQuery({
     queryKey: ['clients', page, limit, search],
-    queryFn: () => apiFallback(
-      async () => {
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('limit', String(limit));
-        params.set('role', UserRole.CLIENT);
-        if (search) params.set('search', search);
-        const res = await api.get<IApiResponse<IUser[]>>(`/users?${params}`);
-        if (res.data.meta) setTotal(res.data.meta.total);
-        return res.data.data || [];
-      },
-      DEMO_CLIENTS
-    ),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      params.set('role', UserRole.CLIENT);
+      if (search) params.set('search', search);
+      const res = await api.get<IApiResponse<IUser[]>>(`/users?${params}`);
+      if (res.data.meta) setTotal(res.data.meta.total);
+      return res.data.data || [];
+    },
   });
 
   const createMutation = useMutation({

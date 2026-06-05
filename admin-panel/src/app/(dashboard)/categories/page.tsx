@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '@/lib/api';
-import { apiFallback, DEMO_CATEGORIES } from '@/lib/demoData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,13 +112,10 @@ export default function CategoriesPage() {
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => apiFallback(
-      async () => {
-        const res = await api.get<IApiResponse<ICategory[]>>('/categories');
-        return res.data.data || [];
-      },
-      DEMO_CATEGORIES
-    ),
+    queryFn: async () => {
+      const res = await api.get<IApiResponse<ICategory[]>>('/categories');
+      return res.data.data || [];
+    },
   });
 
   const createMutation = useMutation({

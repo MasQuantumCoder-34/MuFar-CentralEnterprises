@@ -16,6 +16,7 @@ const config = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPass: process.env.SMTP_PASS || '',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',').map(s => s.trim()),
   nodeEnv: process.env.NODE_ENV || 'development',
 };
 

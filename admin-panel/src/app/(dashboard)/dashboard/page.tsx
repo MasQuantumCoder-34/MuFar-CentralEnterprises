@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { apiFallback, DEMO_DASHBOARD, DEMO_ORDERS } from '@/lib/demoData';
+import { useAuth } from '@/hooks/useAuth';
 import StatsCard from '@/components/shared/StatsCard';
 import StatusBadge from '@/components/shared/StatusBadge';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
@@ -46,20 +46,15 @@ import type { IDashboardStats, IOrder, IApiResponse } from '@/types';
 import { format } from 'date-fns';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
-    queryFn: () => apiFallback(
-      () => api.get<IApiResponse<IDashboardStats>>('/dashboard/admin').then(r => r.data.data!),
-      DEMO_DASHBOARD
-    ),
+    queryFn: () => api.get<IApiResponse<IDashboardStats>>('/dashboard/admin').then(r => r.data.data!),
   });
 
   const { data: recentOrders } = useQuery({
     queryKey: ['recent-orders'],
-    queryFn: () => apiFallback(
-      () => api.get<IApiResponse<IOrder[]>>('/orders?limit=5&sort=-createdAt').then(r => r.data.data || []),
-      DEMO_ORDERS
-    ),
+    queryFn: () => api.get<IApiResponse<IOrder[]>>('/orders?limit=5&sort=-createdAt').then(r => r.data.data || []),
   });
 
   if (isLoading) return <LoadingSpinner />;
@@ -79,8 +74,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your commerce platform</p>
+        <h1 className="text-xl font-bold sm:text-2xl">
+          Welcome{user?.name || user?.storeName || user?.ownerName ? `, ${user?.name || user?.storeName || user?.ownerName}` : ''}!
+        </h1>
+        <p className="text-sm text-muted-foreground sm:text-base">Overview of your commerce platform</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

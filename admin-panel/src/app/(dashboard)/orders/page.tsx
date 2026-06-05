@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { apiFallback, DEMO_ORDERS } from '@/lib/demoData';
 import DataTable from '@/components/shared/DataTable';
 import SearchInput from '@/components/shared/SearchInput';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -29,19 +28,16 @@ export default function OrdersPage() {
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders', page, limit, search, statusFilter],
-    queryFn: () => apiFallback(
-      async () => {
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('limit', String(limit));
-        if (search) params.set('search', search);
-        if (statusFilter) params.set('status', statusFilter);
-        const res = await api.get<IApiResponse<IOrder[]>>(`/orders?${params}`);
-        if (res.data.meta) setTotal(res.data.meta.total);
-        return res.data.data || [];
-      },
-      DEMO_ORDERS
-    ),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      if (search) params.set('search', search);
+      if (statusFilter) params.set('status', statusFilter);
+      const res = await api.get<IApiResponse<IOrder[]>>(`/orders?${params}`);
+      if (res.data.meta) setTotal(res.data.meta.total);
+      return res.data.data || [];
+    },
   });
 
   const columns = [

@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '@/lib/api';
-import { apiFallback } from '@/lib/demoData';
 import DataTable from '@/components/shared/DataTable';
 import SearchInput from '@/components/shared/SearchInput';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
@@ -65,22 +64,15 @@ export default function UsersPage() {
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['users', page, limit, search],
-    queryFn: () => apiFallback(
-      async () => {
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('limit', String(limit));
-        if (search) params.set('search', search);
-        const res = await api.get<IApiResponse<IUser[]>>(`/users?${params}`);
-        if (res.data.meta) setTotal(res.data.meta.total);
-        return (res.data.data || []).filter((u) => u.role !== UserRole.CLIENT);
-      },
-      [
-        { _id: 'staff-001', name: 'Admin User', email: 'admin@mufartec.com', mobile: '9876543001', role: UserRole.SUPER_ADMIN, isActive: true, isLocked: false, mustChangePassword: false, loginAttempts: 0, createdAt: '', updatedAt: '' } as IUser,
-        { _id: 'staff-002', name: 'Manager One', email: 'manager@mufartec.com', mobile: '9876543002', role: UserRole.ADMIN, isActive: true, isLocked: false, mustChangePassword: false, loginAttempts: 0, createdAt: '', updatedAt: '' } as IUser,
-        { _id: 'staff-003', name: 'Sales Rep', email: 'sales@mufartec.com', mobile: '9876543003', role: UserRole.SALES_EXECUTIVE, isActive: true, isLocked: false, mustChangePassword: false, loginAttempts: 0, createdAt: '', updatedAt: '' } as IUser,
-      ]
-    ),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      if (search) params.set('search', search);
+      const res = await api.get<IApiResponse<IUser[]>>(`/users?${params}`);
+      if (res.data.meta) setTotal(res.data.meta.total);
+      return (res.data.data || []).filter((u) => u.role !== UserRole.CLIENT);
+    },
   });
 
   const createMutation = useMutation({
