@@ -10,6 +10,8 @@ import config from './config/index';
 import connectDB from './config/database';
 import routes from './routes/index';
 import errorHandler from './middleware/errorHandler';
+import User from './models/User';
+import Settings from './models/Settings';
 import { RATE_LIMIT } from '@mufar-commerce/shared';
 
 const app = express();
@@ -74,9 +76,43 @@ app.use((_req, res) => {
 
 app.use(errorHandler);
 
+const autoSeed = async (): Promise<void> => {
+  const adminExists = await User.findOne({ email: 'admin@mufar.com' });
+  if (!adminExists) {
+    await User.create({
+      storeName: 'Mufar Technologies',
+      ownerName: 'Super Admin',
+      name: 'Super Admin',
+      email: 'admin@mufar.com',
+      mobile: '9999999999',
+      password: 'Admin@123',
+      role: 'super_admin',
+      isActive: true,
+      isLocked: false,
+      mustChangePassword: false,
+    });
+    console.log('Auto-seed: super admin created (admin@mufar.com / Admin@123)');
+  }
+
+  const settingsExist = await Settings.findOne();
+  if (!settingsExist) {
+    await Settings.create({
+      companyName: 'Mufar Commerce',
+      contactNumber: '9999999999',
+      email: 'admin@mufar.com',
+      address: 'Mufar Technologies HQ',
+      gstNumber: 'GSTIN123456',
+      invoicePrefix: 'INV',
+      lowStockThreshold: 10,
+    });
+    console.log('Auto-seed: default settings created');
+  }
+};
+
 const startServer = async (): Promise<void> => {
   try {
     await connectDB();
+    await autoSeed();
     app.listen(config.port, () => {
       console.log(`Server running in ${config.nodeEnv} mode on port ${config.port}`);
       console.log(`API available at http://localhost:${config.port}/api`);
