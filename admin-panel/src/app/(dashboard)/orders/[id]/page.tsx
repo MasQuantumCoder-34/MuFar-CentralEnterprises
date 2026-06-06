@@ -251,7 +251,7 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="text-lg">Invoice</CardTitle>
             </CardHeader>
@@ -269,7 +269,7 @@ export default function OrderDetailPage() {
                 Print
               </Button>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
 

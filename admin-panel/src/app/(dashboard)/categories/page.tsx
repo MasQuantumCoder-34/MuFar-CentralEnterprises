@@ -41,9 +41,12 @@ import {
   FolderTree,
   ChevronRight,
   ChevronDown,
+  Package,
+  ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { ICategory, IApiResponse } from '@/types';
+import Image from 'next/image';
+import type { ICategory, IProduct, IApiResponse } from '@/types';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -66,7 +69,17 @@ function CategoryRow({
   onDelete: (id: string) => void;
   depth: number;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+
+  const { data: products, isLoading: productsLoading } = useQuery({
+    queryKey: ['products', category._id],
+    queryFn: async () => {
+      const res = await api.get<IApiResponse<IProduct[]>>(`/products?category=${category._id}&limit=50`);
+      return res.data.data || [];
+    },
+    staleTime: 60 * 1000,
+    enabled: expanded,
+  });
 
   return (
     <>
@@ -98,6 +111,39 @@ function CategoryRow({
           </Button>
         </div>
       </div>
+      {expanded && (
+        <div style={{ marginLeft: (depth + 1) * 24 }} className="space-y-2">
+          {productsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <LoadingSpinner />
+            </div>
+          ) : products && products.length > 0 ? (
+            products.map((product) => (
+              <div
+                key={product._id}
+                className="flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5"
+              >
+                <div className="h-10 w-10 rounded-md overflow-hidden bg-muted-foreground/20 flex items-center justify-center flex-shrink-0">
+                  {product.images?.[0] ? (
+                    <Image src={product.images[0]} alt={product.name} width={40} height={40} className="object-cover w-full h-full" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{product.name}</p>
+                  <p className="text-xs text-muted-foreground">₹{product.mrp.toLocaleString()}</p>
+                </div>
+                <Badge variant={product.stockQuantity <= product.lowStockThreshold ? 'destructive' : 'secondary'}>
+                  Stock: {product.stockQuantity}
+                </Badge>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-3">No products in this category</p>
+          )}
+        </div>
+      )}
     </>
   );
 }

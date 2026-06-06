@@ -76,6 +76,15 @@ app.use((_req, res) => {
 
 app.use(errorHandler);
 
+const cleanupIndexes = async (): Promise<void> => {
+  try {
+    await User.collection.dropIndex('email_1');
+    console.log('Dropped legacy email unique index');
+  } catch {
+    // index already gone or never existed
+  }
+};
+
 const autoSeed = async (): Promise<void> => {
   const adminExists = await User.findOne({ email: 'admin@mufar.com' });
   if (!adminExists) {
@@ -112,6 +121,7 @@ const autoSeed = async (): Promise<void> => {
 const startServer = async (): Promise<void> => {
   try {
     await connectDB();
+    await cleanupIndexes();
     await autoSeed();
     app.listen(config.port, () => {
       console.log(`Server running in ${config.nodeEnv} mode on port ${config.port}`);
