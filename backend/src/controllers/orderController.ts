@@ -122,8 +122,7 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
         return;
       }
 
-      const price = product.offerPrice || product.price;
-      const total = price * item.quantity;
+      const total = product.mrp * item.quantity;
       subtotal += total;
 
       orderItems.push({
@@ -131,7 +130,7 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
         productName: product.name,
         sku: product.sku,
         quantity: item.quantity,
-        price,
+        price: product.mrp,
         total,
       });
     }
@@ -417,8 +416,7 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
           return;
         }
 
-        const price = product.offerPrice || product.price;
-        const total = price * item.quantity;
+        const total = product.mrp * item.quantity;
         subtotal += total;
 
         orderItems.push({
@@ -426,7 +424,7 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
           productName: product.name,
           sku: product.sku,
           quantity: item.quantity,
-          price,
+          price: product.mrp,
           total,
         });
       }

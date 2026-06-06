@@ -12,7 +12,6 @@ const productSchema = new Schema<IProductDocument>(
     },
     sku: {
       type: String,
-      required: [true, 'SKU is required'],
       unique: true,
       uppercase: true,
       trim: true,
@@ -22,18 +21,13 @@ const productSchema = new Schema<IProductDocument>(
       ref: 'Category',
       required: [true, 'Category is required'],
     },
-    brand: { type: String, trim: true },
-    description: { type: String, trim: true },
-    price: {
+    mrp: {
       type: Number,
-      required: [true, 'Price is required'],
-      min: [0, 'Price cannot be negative'],
-    },
-    offerPrice: {
-      type: Number,
-      min: [0, 'Offer price cannot be negative'],
+      required: [true, 'MRP is required'],
+      min: [0, 'MRP cannot be negative'],
     },
     images: [{ type: String }],
+    sizes: [{ type: String }],
     stockQuantity: {
       type: Number,
       required: true,
@@ -58,7 +52,7 @@ const productSchema = new Schema<IProductDocument>(
   }
 );
 
-productSchema.index({ name: 'text', sku: 'text', brand: 'text' });
+productSchema.index({ name: 'text' });
 productSchema.index({ sku: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1 });

@@ -13,9 +13,6 @@ const getProducts = async (req: AuthRequest, res: Response, next: NextFunction):
     const limit = parseInt(req.query.limit as string) || 10;
     const category = req.query.category as string;
     const search = req.query.search as string;
-    const brand = req.query.brand as string;
-    const minPrice = req.query.minPrice as string;
-    const maxPrice = req.query.maxPrice as string;
     const sortBy = (req.query.sortBy as string) || 'createdAt';
     const sortOrder = (req.query.sortOrder as string) === 'asc' ? 1 : -1;
     const isActive = req.query.isActive as string;
@@ -23,18 +20,10 @@ const getProducts = async (req: AuthRequest, res: Response, next: NextFunction):
     const filter: any = {};
 
     if (category) filter.category = category;
-    if (brand) filter.brand = { $regex: brand, $options: 'i' };
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } },
-        { brand: { $regex: search, $options: 'i' } },
       ];
-    }
-    if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice) filter.price.$gte = parseFloat(minPrice);
-      if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
     if (isActive !== undefined) filter.isActive = isActive === 'true';
 
@@ -63,10 +52,9 @@ const getProducts = async (req: AuthRequest, res: Response, next: NextFunction):
 
 const createProduct = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const existingProduct = await Product.findOne({ sku: req.body.sku });
-    if (existingProduct) {
-      res.status(409).json({ success: false, message: 'Product with this SKU already exists', error: 'Conflict' });
-      return;
+    if (!req.body.sku) {
+      const timestamp = Date.now().toString(36).toUpperCase();
+      req.body.sku = `PROD-${timestamp}`;
     }
 
     const categoryExists = await Category.findById(req.body.category);
@@ -92,7 +80,7 @@ const createProduct = async (req: AuthRequest, res: Response, next: NextFunction
       action: ActivityAction.CREATE,
       resource: 'Product',
       resourceId: String(product._id),
-      details: `Created product ${product.name} (SKU: ${product.sku})`,
+      details: `Created product ${product.name}`,
     });
 
     res.status(201).json({
@@ -131,14 +119,6 @@ const updateProduct = async (req: AuthRequest, res: Response, next: NextFunction
     if (!product) {
       res.status(404).json({ success: false, message: 'Product not found', error: 'Not Found' });
       return;
-    }
-
-    if (req.body.sku && req.body.sku !== product.sku) {
-      const existing = await Product.findOne({ sku: req.body.sku });
-      if (existing) {
-        res.status(409).json({ success: false, message: 'SKU already exists', error: 'Conflict' });
-        return;
-      }
     }
 
     const oldStock = product.stockQuantity;
@@ -193,7 +173,7 @@ const deleteProduct = async (req: AuthRequest, res: Response, next: NextFunction
       action: ActivityAction.DELETE,
       resource: 'Product',
       resourceId: req.params.id,
-      details: `Deleted product ${product.name} (SKU: ${product.sku})`,
+      details: `Deleted product ${product.name}`,
     });
 
     res.status(200).json({
@@ -299,11 +279,7 @@ const searchProducts = async (req: AuthRequest, res: Response, next: NextFunctio
 
     const filter: any = {
       isActive: true,
-      $or: [
-        { name: { $regex: query, $options: 'i' } },
-        { sku: { $regex: query, $options: 'i' } },
-        { brand: { $regex: query, $options: 'i' } },
-      ],
+      name: { $regex: query, $options: 'i' },
     };
 
     const total = await Product.countDocuments(filter);

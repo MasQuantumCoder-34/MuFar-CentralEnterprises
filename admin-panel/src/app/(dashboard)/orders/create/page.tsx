@@ -127,7 +127,7 @@ export default function CreateOrderPage() {
     setCart(prev => prev.filter(item => item.product._id !== productId));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.product.mrp * item.quantity, 0);
   const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const createOrderMutation = useMutation({
@@ -331,7 +331,7 @@ export default function CreateOrderPage() {
                         <CardContent className="p-3 space-y-2">
                           <p className="font-medium text-sm line-clamp-1">{product.name}</p>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-primary font-semibold">₹{product.price.toLocaleString()}</span>
+                            <span className="text-primary font-semibold">₹{product.mrp.toLocaleString()}</span>
                             <span className={product.stockQuantity <= 5 ? 'text-destructive text-xs' : 'text-muted-foreground text-xs'}>
                               Stock: {product.stockQuantity}
                             </span>
@@ -376,7 +376,7 @@ export default function CreateOrderPage() {
                         <div key={item.product._id} className="flex items-center justify-between gap-2 p-2 bg-muted rounded-lg text-sm">
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">{item.product.name}</p>
-                            <p className="text-xs text-muted-foreground">₹{item.product.price.toLocaleString()} × {item.quantity}</p>
+                            <p className="text-xs text-muted-foreground">₹{item.product.mrp.toLocaleString()} × {item.quantity}</p>
                           </div>
                           <div className="flex items-center gap-1">
                             <Button

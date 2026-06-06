@@ -36,20 +36,20 @@ import {
   EyeOff,
   Eye,
   ImageIcon,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import type { IProduct, ICategory, IApiResponse } from '@/types';
 import { usePagination } from '@/hooks/usePagination';
 
+const SIZES = ['SM', 'M', 'L', 'XL', 'XXL'];
+
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  sku: z.string().min(1, 'SKU is required'),
   category: z.string().min(1, 'Category is required'),
-  brand: z.string().optional(),
-  description: z.string().optional(),
-  price: z.coerce.number().positive('Price must be positive'),
-  offerPrice: z.coerce.number().positive().optional().or(z.literal('')),
+  mrp: z.coerce.number().positive('MRP must be positive'),
+  sizes: z.array(z.string()).default([]),
   stockQuantity: z.coerce.number().int().min(0),
   lowStockThreshold: z.coerce.number().int().min(0).default(10),
   images: z.array(z.string()).default([]),
@@ -158,12 +158,9 @@ export default function ProductsPage() {
     setEditingProduct(product);
     form.reset({
       name: product.name,
-      sku: product.sku,
       category: typeof product.category === 'string' ? product.category : product.category._id,
-      brand: product.brand || '',
-      description: product.description || '',
-      price: product.price,
-      offerPrice: product.offerPrice || ('' as any),
+      mrp: product.mrp,
+      sizes: product.sizes || [],
       stockQuantity: product.stockQuantity,
       lowStockThreshold: product.lowStockThreshold,
       images: product.images || [],
@@ -214,10 +211,10 @@ export default function ProductsPage() {
         product.category && typeof product.category === 'object' ? product.category.name : 'N/A',
     },
     {
-      key: 'price',
-      header: 'Price',
+      key: 'mrp',
+      header: 'MRP',
       sortable: true,
-      render: (product: IProduct) => `₹${product.price.toLocaleString()}`,
+      render: (product: IProduct) => `₹${product.mrp.toLocaleString()}`,
     },
     {
       key: 'stockQuantity',
@@ -320,61 +317,46 @@ export default function ProductsPage() {
       />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingProduct ? 'Edit Product' : 'Create Product'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input {...form.register('name')} />
+              {form.formState.errors.name && (
+                <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select
+                value={form.watch('category')}
+                onValueChange={(v) => form.setValue('category', v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(categories || []).map((cat) => (
+                    <SelectItem key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.category && (
+                <p className="text-xs text-destructive">{form.formState.errors.category.message}</p>
+              )}
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Name</Label>
-                <Input {...form.register('name')} />
-                {form.formState.errors.name && (
-                  <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                <Label>MRP (₹)</Label>
+                <Input type="number" step="0.01" {...form.register('mrp')} />
+                {form.formState.errors.mrp && (
+                  <p className="text-xs text-destructive">{form.formState.errors.mrp.message}</p>
                 )}
-              </div>
-              <div className="space-y-2">
-                <Label>SKU</Label>
-                <Input {...form.register('sku')} />
-                {form.formState.errors.sku && (
-                  <p className="text-xs text-destructive">{form.formState.errors.sku.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select
-                  value={form.watch('category')}
-                  onValueChange={(v) => form.setValue('category', v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(categories || []).map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.category && (
-                  <p className="text-xs text-destructive">{form.formState.errors.category.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Brand</Label>
-                <Input {...form.register('brand')} />
-              </div>
-              <div className="space-y-2">
-                <Label>Price (₹)</Label>
-                <Input type="number" step="0.01" {...form.register('price')} />
-                {form.formState.errors.price && (
-                  <p className="text-xs text-destructive">{form.formState.errors.price.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Offer Price (₹)</Label>
-                <Input type="number" step="0.01" {...form.register('offerPrice')} />
               </div>
               <div className="space-y-2">
                 <Label>Stock Quantity</Label>
@@ -389,11 +371,33 @@ export default function ProductsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <textarea
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                {...form.register('description')}
-              />
+              <Label>Sizes</Label>
+              <div className="flex flex-wrap gap-2">
+                {SIZES.map((size) => {
+                  const selected = (form.watch('sizes') || []).includes(size);
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => {
+                        const current = form.watch('sizes') || [];
+                        form.setValue(
+                          'sizes',
+                          selected ? current.filter((s) => s !== size) : [...current, size]
+                        );
+                      }}
+                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                        selected
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-input bg-background hover:bg-muted'
+                      }`}
+                    >
+                      {size}
+                      {selected && <X className="h-3 w-3" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Images</Label>
