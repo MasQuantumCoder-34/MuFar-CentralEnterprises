@@ -58,9 +58,11 @@ const getUsers = async (req: AuthRequest, res: Response, next: NextFunction): Pr
 
 const createUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userData = req.body;
+    const userData = { ...req.body };
 
-    if (userData.email) {
+    if (!userData.email) {
+      delete userData.email;
+    } else {
       const existingUser = await User.findOne({ email: userData.email });
       if (existingUser) {
         res.status(409).json({ success: false, message: 'User with this email already exists', error: 'Conflict' });
@@ -155,21 +157,19 @@ const deleteUser = async (req: AuthRequest, res: Response, next: NextFunction): 
       return;
     }
 
-    user.isActive = false;
-    await user.save();
+    await User.findByIdAndDelete(req.params.id);
 
     await ActivityLog.create({
       user: req.user?._id,
       action: ActivityAction.DELETE,
       resource: 'User',
       resourceId: req.params.id,
-      details: `Soft deleted user ${user.email}`,
+      details: `Deleted user ${user.email}`,
     });
 
     res.status(200).json({
       success: true,
-      message: 'User deactivated successfully',
-      data: user,
+      message: 'User deleted permanently',
     });
   } catch (error) {
     next(error);

@@ -14,8 +14,6 @@ const userSchema = new Schema<IUserDocument>(
     name: { type: String, trim: true },
     email: {
       type: String,
-      unique: true,
-      sparse: true,
       lowercase: true,
       trim: true,
     },
@@ -78,7 +76,6 @@ userSchema.methods.comparePassword = async function (candidatePassword: string):
   return bcrypt.compare(candidatePassword, this.password!);
 };
 
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 const User = mongoose.model<IUserDocument>('User', userSchema);
