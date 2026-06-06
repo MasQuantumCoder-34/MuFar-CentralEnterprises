@@ -46,22 +46,12 @@ export default function ProfileScreen() {
             </View>
             <Text className="text-xl font-bold text-white">{user?.name || 'User'}</Text>
             <Text className="text-sm text-white/80 mt-1">{user?.email}</Text>
-            {user?.phone && <Text className="text-sm text-white/80">{user.phone}</Text>}
+            {user?.mobile && <Text className="text-sm text-white/80">{user.mobile}</Text>}
           </View>
         </View>
 
         <View className="rounded-t-3xl bg-gray-50 -mt-6 px-4 pt-6">
-          {user?.address && (
-            <View className="bg-white rounded-xl p-4 mb-4 border border-gray-100">
-              <View className="flex-row items-start">
-                <Ionicons name="location-outline" size={20} color={COLORS.textSecondary} style={{ marginTop: 2 }} />
-                <View className="ml-3 flex-1">
-                  <Text className="text-sm font-medium text-gray-800">Default Address</Text>
-                  <Text className="text-sm text-gray-500 mt-1">{user.address}</Text>
-                </View>
-              </View>
-            </View>
-          )}
+
 
           <View className="bg-white rounded-xl border border-gray-100 mb-4 overflow-hidden">
             {menuItems.map((item, index) => (

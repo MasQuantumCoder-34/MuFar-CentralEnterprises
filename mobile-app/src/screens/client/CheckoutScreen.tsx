@@ -46,7 +46,7 @@ export default function CheckoutScreen() {
         deliveryAddress: deliveryAddress.trim(),
         contactNumber: contactNumber.trim(),
         notes: notes.trim() || undefined,
-        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        items: items.map((i) => ({ product: typeof i.product === 'string' ? i.product : i.product._id, quantity: i.quantity })),
       });
 
       clearCart();
@@ -115,11 +115,13 @@ export default function CheckoutScreen() {
 
         <Text className="text-xl font-bold text-gray-800 mb-3">Order Summary</Text>
         {items.map((item) => {
-          const price = item.product.offerPrice || item.product.price;
+          const productData = typeof item.product === 'object' ? item.product : null;
+          const productId = typeof item.product === 'string' ? item.product : item.product._id;
+          const price = productData ? (productData.offerPrice || productData.price) : 0;
           return (
-            <View key={item.productId} className="flex-row items-center bg-white rounded-lg p-3 mb-2 border border-gray-100">
+            <View key={productId} className="flex-row items-center bg-white rounded-lg p-3 mb-2 border border-gray-100">
               <View className="flex-1">
-                <Text className="text-sm font-medium text-gray-800" numberOfLines={1}>{item.product.name}</Text>
+                <Text className="text-sm font-medium text-gray-800" numberOfLines={1}>{productData?.name || 'Product'}</Text>
                 <Text className="text-xs text-gray-500">Qty: {item.quantity} x KES {price}</Text>
               </View>
               <Text className="text-sm font-semibold text-gray-800">KES {(price * item.quantity).toLocaleString()}</Text>

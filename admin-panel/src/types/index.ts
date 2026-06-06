@@ -9,15 +9,12 @@ export { ORDER_STATUS_FLOW, PAGINATION, CURRENCY } from './constants';
 
 export interface UpdateOrderStatusInput {
   status: string;
-  rejectionReason?: string;
-  holdReason?: string;
-  expectedDeliveryDate?: string;
   notes?: string;
 }
 
 export interface CreateOrderInput {
-  deliveryAddress: string;
-  contactNumber: string;
+  deliveryAddress?: string;
+  contactNumber?: string;
   notes?: string;
   items: { product: string; quantity: number }[];
 }

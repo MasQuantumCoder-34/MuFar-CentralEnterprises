@@ -22,7 +22,7 @@ export default function ProductCard({
     product.images && product.images.length > 0
       ? { uri: product.images[0] }
       : undefined;
-  const outOfStock = product.stock <= 0;
+  const outOfStock = product.stockQuantity <= 0;
 
   if (variant === 'list') {
     return (
@@ -117,7 +117,7 @@ export default function ProductCard({
           {product.name}
         </Text>
         <Text className="text-xs text-gray-500 mt-0.5">
-          {product.brand || product.categoryName || ''}
+          {product.brand || (typeof product.category === 'object' ? product.category.name : '') || ''}
         </Text>
         <View className="flex-row items-center justify-between mt-2">
           <View>

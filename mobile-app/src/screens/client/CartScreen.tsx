@@ -50,7 +50,7 @@ export default function CartScreen() {
 
       <FlatList
         data={items}
-        keyExtractor={(item) => item.productId.toString()}
+        keyExtractor={(item) => typeof item.product === 'string' ? item.product : item.product._id}
         renderItem={({ item }) => (
           <CartItemComponent
             item={item}

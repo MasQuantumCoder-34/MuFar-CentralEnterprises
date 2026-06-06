@@ -44,8 +44,8 @@ export default function ProductDetailScreen() {
   }, [productId]);
 
   const handleAddToCart = () => {
-    if (!product || product.stock <= 0) return;
-    addItem({ productId: product.id, product, quantity });
+    if (!product || product.stockQuantity <= 0) return;
+    addItem({ product, quantity });
     Toast.show({ type: 'success', text1: 'Added to cart', text2: `${product.name} x${quantity}` });
   };
 
@@ -69,7 +69,7 @@ export default function ProductDetailScreen() {
   }
 
   const hasOffer = !!product.offerPrice && product.offerPrice < product.price;
-  const outOfStock = product.stock <= 0;
+  const outOfStock = product.stockQuantity <= 0;
   const images = product.images?.length > 0 ? product.images : [];
 
   return (
@@ -124,7 +124,7 @@ export default function ProductDetailScreen() {
               </View>
             )}
             <View className="bg-gray-100 rounded-full px-3 py-1">
-              <Text className="text-xs text-gray-600">{product.categoryName || 'General'}</Text>
+              <Text className="text-xs text-gray-600">{typeof product.category === 'object' ? product.category.name : product.category || 'General'}</Text>
             </View>
           </View>
 
@@ -146,13 +146,13 @@ export default function ProductDetailScreen() {
               <View className="bg-red-50 rounded-full px-3 py-1">
                 <Text className="text-sm text-red-600 font-medium">Out of Stock</Text>
               </View>
-            ) : product.stock <= 5 ? (
+            ) : product.stockQuantity <= 5 ? (
               <View className="bg-orange-50 rounded-full px-3 py-1">
-                <Text className="text-sm text-orange-600 font-medium">Only {product.stock} left</Text>
+                <Text className="text-sm text-orange-600 font-medium">Only {product.stockQuantity} left</Text>
               </View>
             ) : (
               <View className="bg-green-50 rounded-full px-3 py-1">
-                <Text className="text-sm text-green-600 font-medium">In Stock ({product.stock})</Text>
+                <Text className="text-sm text-green-600 font-medium">In Stock ({product.stockQuantity})</Text>
               </View>
             )}
           </View>
@@ -164,7 +164,7 @@ export default function ProductDetailScreen() {
 
           <View className="mt-6">
             <Text className="text-base font-semibold text-gray-800 mb-2">Quantity</Text>
-            <QuantitySelector quantity={quantity} onChange={setQuantity} max={Math.min(product.stock, 99)} min={1} />
+            <QuantitySelector quantity={quantity} onChange={setQuantity} max={Math.min(product.stockQuantity, 99)} min={1} />
           </View>
 
           <View className="flex-row mt-6 mb-8">

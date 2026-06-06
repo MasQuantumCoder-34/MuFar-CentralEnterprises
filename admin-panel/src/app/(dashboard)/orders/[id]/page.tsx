@@ -13,7 +13,6 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
@@ -43,20 +42,15 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Truck,
-  PackageCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ORDER_STATUS_FLOW } from '@/types';
-import type { IOrder, ITimelineEntry, IApiResponse, UpdateOrderStatusInput } from '@/types';
+import type { IOrder, ITimelineEntry, IApiResponse } from '@/types';
 import Link from 'next/link';
 
 const statusUpdateSchema = z.object({
   status: z.string().min(1),
-  rejectionReason: z.string().optional(),
-  holdReason: z.string().optional(),
-  expectedDeliveryDate: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -85,18 +79,16 @@ export default function OrderDetailPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: StatusUpdateForm) => {
-      const payload: UpdateOrderStatusInput = {
-        status: data.status as any,
-        rejectionReason: data.rejectionReason,
-        holdReason: data.holdReason,
-        expectedDeliveryDate: data.expectedDeliveryDate,
-        notes: data.notes,
-      };
+      const payload: Record<string, string> = { status: data.status };
+      if (data.notes) payload.notes = data.notes;
       await api.put(`/orders/${id}/status`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['modify-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['cancel-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-orders'] });
       toast.success('Order status updated');
       form.reset({ status: '' });
     },
@@ -109,6 +101,10 @@ export default function OrderDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', id] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['modify-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['cancel-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-orders'] });
       toast.success('Order cancelled');
       setShowCancelDialog(false);
     },
@@ -197,7 +193,7 @@ export default function OrderDetailPage() {
               <CardTitle className="text-lg">Client Info</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              {typeof order.client === 'object' && (
+              {order.client && typeof order.client === 'object' && (
                 <>
                   <p><span className="text-muted-foreground">Name:</span> {order.client.storeName || order.client.name}</p>
                   <p><span className="text-muted-foreground">Email:</span> {order.client.email}</p>
@@ -237,24 +233,6 @@ export default function OrderDetailPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {(selectedStatus === 'rejected' || selectedStatus === 'cancelled') && (
-                    <div className="space-y-2">
-                      <Label>Reason for rejection</Label>
-                      <Input {...form.register('rejectionReason')} placeholder="Explain why..." />
-                    </div>
-                  )}
-                  {selectedStatus === 'on_hold' && (
-                    <div className="space-y-2">
-                      <Label>Hold reason</Label>
-                      <Input {...form.register('holdReason')} placeholder="Why is this on hold?" />
-                    </div>
-                  )}
-                  {selectedStatus === 'accepted' && (
-                    <div className="space-y-2">
-                      <Label>Expected delivery date</Label>
-                      <Input type="date" {...form.register('expectedDeliveryDate')} />
-                    </div>
-                  )}
                   <div className="space-y-2">
                     <Label>Notes (optional)</Label>
                     <Input {...form.register('notes')} placeholder="Additional notes" />
@@ -268,7 +246,7 @@ export default function OrderDetailPage() {
                   </Button>
                 </form>
               )}
-              {currentStatus !== 'cancelled' && currentStatus !== 'delivered' && currentStatus !== 'rejected' && (
+              {currentStatus !== 'cancelled' && currentStatus !== 'delivered' && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -317,9 +295,9 @@ export default function OrderDetailPage() {
                 <div key={i} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      {entry.status === 'delivered' || entry.status === 'accepted' ? (
+                      {entry.status === 'delivered' ? (
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : entry.status === 'rejected' || entry.status === 'cancelled' ? (
+                      ) : entry.status === 'cancelled' ? (
                         <XCircle className="h-4 w-4 text-destructive" />
                       ) : (
                         <Clock className="h-4 w-4 text-muted-foreground" />

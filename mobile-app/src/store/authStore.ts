@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           const profile = await authService.getProfile();
           set({ user: profile });
         } catch {
-          set({ isAuthenticated: false, user: null, token: null });
+          set({ isAuthenticated: false, user: null, token: null, isLoading: false });
         }
       } else {
         set({ isLoading: false });
@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const response = await authService.login(email, password);
     set({
       user: response.user,
-      token: response.token,
+      token: response.accessToken,
       isAuthenticated: true,
     });
     return response.user;

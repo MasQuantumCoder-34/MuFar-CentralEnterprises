@@ -123,7 +123,7 @@ export default function OrderDetailScreen() {
       <View className="bg-white p-4 mb-3">
         <Text className="font-semibold text-gray-800 mb-3">Items</Text>
         {order.items.map((item) => (
-          <View key={item.id} className="flex-row items-center mb-3">
+          <View key={item.productSku} className="flex-row items-center mb-3">
             <View className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
               {item.productImage ? (
                 <Image source={{ uri: item.productImage }} className="w-full h-full" resizeMode="cover" />
@@ -176,12 +176,12 @@ export default function OrderDetailScreen() {
         </View>
         <View className="flex-row justify-between mb-2">
           <Text className="text-sm text-gray-600">Tax</Text>
-          <Text className="text-sm text-gray-600">KES {order.tax.toLocaleString()}</Text>
+          <Text className="text-sm text-gray-600">KES {(order.tax ?? 0).toLocaleString()}</Text>
         </View>
-        {order.discount > 0 && (
+        {(order.discount ?? 0) > 0 && (
           <View className="flex-row justify-between mb-2">
             <Text className="text-sm text-gray-600">Discount</Text>
-            <Text className="text-sm text-green-600">-KES {order.discount.toLocaleString()}</Text>
+            <Text className="text-sm text-green-600">-KES {(order.discount ?? 0).toLocaleString()}</Text>
           </View>
         )}
         <View className="border-t border-gray-200 pt-2 mt-1 flex-row justify-between">

@@ -257,7 +257,7 @@ export default function InventoryPage() {
                         <ClipboardList className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <p className="text-sm font-medium">
-                            {typeof log.product === 'object' ? log.product.name : 'Product'}
+                            {log.product && typeof log.product === 'object' ? log.product.name : 'Product'}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {log.action.replace(/_/g, ' ')} | Previous: {log.previousStock} → New:{' '}

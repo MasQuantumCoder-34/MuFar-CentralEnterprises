@@ -9,10 +9,16 @@ export const loginSchema = z.object({
 export const createUserSchema = z.object({
   storeName: z.string().min(1, 'Store name is required'),
   ownerName: z.string().min(1, 'Owner name is required'),
-  mobile: z.string().min(10, 'Valid mobile number required'),
-  email: z.string().email('Invalid email address'),
+  mobile: z.string().optional().or(z.literal('')),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
   role: z.nativeEnum(UserRole),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+  gstNumber: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export const updateUserSchema = z.object({
@@ -28,6 +34,7 @@ export const updateUserSchema = z.object({
   country: z.string().optional(),
   pincode: z.string().optional(),
   profileImage: z.string().optional(),
+  notes: z.string().optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -62,8 +69,9 @@ export const createCategorySchema = z.object({
 export const updateCategorySchema = createCategorySchema.partial();
 
 export const createOrderSchema = z.object({
-  deliveryAddress: z.string().min(1, 'Delivery address is required'),
-  contactNumber: z.string().min(10, 'Valid contact number required'),
+  clientId: z.string().optional(),
+  deliveryAddress: z.string().optional(),
+  contactNumber: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(z.object({
     product: z.string().min(1),
@@ -73,9 +81,14 @@ export const createOrderSchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   status: z.nativeEnum(OrderStatus),
-  rejectionReason: z.string().optional(),
-  holdReason: z.string().optional(),
-  expectedDeliveryDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export const updateOrderSchema = z.object({
+  items: z.array(z.object({
+    product: z.string().min(1),
+    quantity: z.number().int().positive('Quantity must be positive'),
+  })).optional(),
   notes: z.string().optional(),
 });
 

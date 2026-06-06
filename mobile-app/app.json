@@ -23,7 +23,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a5632"
       },
-      "package": "com.mufartec.mufarcommerce"
+      "package": "com.mufartec.mufarcommerce",
+      "permissions": ["DETECT_SCREEN_CAPTURE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"

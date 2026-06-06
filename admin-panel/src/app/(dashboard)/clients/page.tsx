@@ -31,9 +31,9 @@ import {
   Plus,
   Pencil,
   Trash2,
+  ShoppingCart,
   EyeOff,
   Eye,
-  ShoppingCart,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -44,15 +44,14 @@ import { usePagination } from '@/hooks/usePagination';
 const clientSchema = z.object({
   storeName: z.string().min(1, 'Store name is required'),
   ownerName: z.string().min(1, 'Owner name is required'),
-  email: z.string().email('Invalid email'),
-  mobile: z.string().min(10, 'Valid mobile number required'),
-  alternateMobile: z.string().optional(),
-  password: z.string().min(6, 'Min 6 characters').optional().or(z.literal('')),
+  mobile: z.string().optional(),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
   gstNumber: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   pincode: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 type ClientForm = z.infer<typeof clientSchema>;
@@ -129,7 +128,7 @@ export default function ClientsPage() {
 
   const openCreate = () => {
     setEditingClient(null);
-    form.reset({ password: '' });
+    form.reset();
     setDialogOpen(true);
   };
 
@@ -138,15 +137,14 @@ export default function ClientsPage() {
     form.reset({
       storeName: client.storeName || '',
       ownerName: client.ownerName || '',
-      email: client.email,
-      mobile: client.mobile,
-      alternateMobile: client.alternateMobile || '',
-      password: '',
+      email: client.email || '',
+      mobile: client.mobile || '',
       gstNumber: client.gstNumber || '',
       address: client.address || '',
       city: client.city || '',
       state: client.state || '',
       pincode: client.pincode || '',
+      notes: client.notes || '',
     });
     setDialogOpen(true);
   };
@@ -159,8 +157,7 @@ export default function ClientsPage() {
 
   const onSubmit = (data: ClientForm) => {
     if (editingClient) {
-      const { password, ...rest } = data;
-      updateMutation.mutate({ id: editingClient._id, data: password ? data : rest });
+      updateMutation.mutate({ id: editingClient._id, data });
     } else {
       createMutation.mutate(data);
     }
@@ -247,53 +244,57 @@ export default function ClientsPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Store Name</Label>
+                <Label>Store Name <span className="text-destructive">*</span></Label>
                 <Input {...form.register('storeName')} />
                 {form.formState.errors.storeName && (
                   <p className="text-xs text-destructive">{form.formState.errors.storeName.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Owner Name</Label>
+                <Label>Owner Name <span className="text-destructive">*</span></Label>
                 <Input {...form.register('ownerName')} />
                 {form.formState.errors.ownerName && (
                   <p className="text-xs text-destructive">{form.formState.errors.ownerName.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" {...form.register('email')} />
-                {form.formState.errors.email && (
-                  <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Mobile</Label>
+                <Label>Mobile <span className="text-xs text-muted-foreground">(optional)</span></Label>
                 <Input {...form.register('mobile')} />
                 {form.formState.errors.mobile && (
                   <p className="text-xs text-destructive">{form.formState.errors.mobile.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Alternate Mobile</Label>
-                <Input {...form.register('alternateMobile')} />
+                <Label>Email <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input type="email" {...form.register('email')} />
+                {form.formState.errors.email && (
+                  <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label>Password {editingClient && '(leave blank to keep)'}</Label>
-                <Input type="password" {...form.register('password')} />
-              </div>
-              <div className="space-y-2">
-                <Label>GST Number</Label>
+                <Label>GST Number <span className="text-xs text-muted-foreground">(optional)</span></Label>
                 <Input {...form.register('gstNumber')} />
               </div>
               <div className="space-y-2">
-                <Label>City</Label>
+                <Label>City <span className="text-xs text-muted-foreground">(optional)</span></Label>
                 <Input {...form.register('city')} />
+              </div>
+              <div className="space-y-2">
+                <Label>State <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input {...form.register('state')} />
+              </div>
+              <div className="space-y-2">
+                <Label>Pincode <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input {...form.register('pincode')} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Address</Label>
+              <Label>Address <span className="text-xs text-muted-foreground">(optional)</span></Label>
               <Input {...form.register('address')} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Input {...form.register('notes')} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>

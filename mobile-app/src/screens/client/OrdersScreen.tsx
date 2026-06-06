@@ -79,7 +79,7 @@ export default function OrdersScreen() {
 
   const renderOrder = ({ item }: { item: Order }) => (
     <TouchableOpacity
-      onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
+      onPress={() => navigation.navigate('OrderDetail', { orderId: item._id })}
       className="bg-white mx-4 mb-3 rounded-xl p-4 border border-gray-100 shadow-sm"
     >
       <View className="flex-row justify-between items-center mb-2">
@@ -133,7 +133,7 @@ export default function OrdersScreen() {
       <FlatList
         data={orders}
         renderItem={renderOrder}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item._id}
         contentContainerClassName={orders.length === 0 ? 'flex-1' : 'pb-4'}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />

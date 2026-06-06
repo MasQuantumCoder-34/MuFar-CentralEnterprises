@@ -70,29 +70,29 @@ export default function ReportsPage() {
     queryKey: ['reports', 'sales', reportType],
     queryFn: async () => {
       const res = await api.get(`/reports/sales?type=${reportType}`);
-      return (res.data?.data || []) as SalesReport[];
+      return (res.data?.data?.breakdown || []) as SalesReport[];
     },
   });
 
   const { data: topCustomers } = useQuery({
     queryKey: ['reports', 'top-customers'],
     queryFn: async () => {
-      const res = await api.get('/reports/top-customers');
-      return (res.data?.data || []) as TopCustomer[];
+      const res = await api.get('/reports/customers');
+      return (res.data?.data?.topCustomers || []) as TopCustomer[];
     },
   });
 
   const { data: lowStockData } = useQuery({
     queryKey: ['reports', 'low-stock'],
     queryFn: async () => {
-      const res = await api.get('/reports/low-stock');
-      return (res.data?.data || []) as any[];
+      const res = await api.get('/reports/inventory');
+      return (res.data?.data?.lowStockProducts || []) as any[];
     },
   });
 
   const exportCSV = async (type: string) => {
     try {
-      const res = await api.get(`/reports/export/${type}`, { responseType: 'blob' });
+      const res = await api.get(`/reports/export?type=${type}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
       a.href = url;

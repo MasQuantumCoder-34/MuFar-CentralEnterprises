@@ -33,6 +33,7 @@ import {
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import EmptyState from '@/components/shared/EmptyState';
+import ImageUpload from '@/components/shared/ImageUpload';
 import {
   Plus,
   Pencil,
@@ -48,6 +49,7 @@ const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   parent: z.string().optional(),
+  image: z.string().optional(),
   sortOrder: z.coerce.number().int().default(0),
 });
 
@@ -244,6 +246,14 @@ export default function CategoriesPage() {
               {form.formState.errors.name && (
                 <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label>Category Image</Label>
+              <ImageUpload
+                images={form.watch('image') ? [form.watch('image')!] : []}
+                onChange={(urls) => form.setValue('image', urls[0] || '')}
+                maxImages={1}
+              />
             </div>
             <div className="space-y-2">
               <Label>Description</Label>

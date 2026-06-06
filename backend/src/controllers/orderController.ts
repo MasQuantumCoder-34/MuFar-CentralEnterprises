@@ -25,16 +25,35 @@ const getOrders = async (req: AuthRequest, res: Response, next: NextFunction): P
     const clientId = req.query.clientId as string;
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
+    const search = req.query.search as string;
 
     const filter: any = {};
 
-    if (status) filter.status = status;
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) filter.status = statuses[0];
+      else if (statuses.length > 1) filter.status = { $in: statuses };
+    }
     if (clientId) filter.client = clientId;
+
+    if (search) {
+      filter.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+      ];
+    }
 
     if (startDate || endDate) {
       filter.createdAt = {};
       if (startDate) filter.createdAt.$gte = new Date(startDate);
       if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+
+    const sortField = req.query.sort as string || '-createdAt';
+    let sortObj: any = { createdAt: -1 };
+    if (sortField.startsWith('-')) {
+      sortObj = { [sortField.slice(1)]: -1 };
+    } else {
+      sortObj = { [sortField]: 1 };
     }
 
     const total = await Order.countDocuments(filter);
@@ -43,7 +62,7 @@ const getOrders = async (req: AuthRequest, res: Response, next: NextFunction): P
     const orders = await Order.find(filter)
       .populate('client', 'storeName ownerName email mobile')
       .populate('items.product', 'name images')
-      .sort({ createdAt: -1 })
+      .sort(sortObj)
       .skip((page - 1) * limit)
       .limit(limit);
 
@@ -118,8 +137,7 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
     }
 
     const tax = Math.round(subtotal * 0.18 * 100) / 100;
-    const discount = 0;
-    const totalAmount = subtotal + tax - discount;
+    const totalAmount = subtotal + tax;
 
     const orderNumber = generateOrderNumber();
     const invoiceNumber = generateInvoiceNumber();
@@ -129,12 +147,12 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
       invoiceNumber,
       client,
       items: orderItems,
-      deliveryAddress,
-      contactNumber,
+      deliveryAddress: deliveryAddress || user.address || '',
+      contactNumber: contactNumber || user.mobile || '',
       notes,
       status: OrderStatus.PENDING,
       subtotal,
-      discount,
+      discount: 0,
       tax,
       total: totalAmount,
       timeline: [
@@ -202,7 +220,7 @@ const getOrderById = async (req: AuthRequest, res: Response, next: NextFunction)
 
 const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { status, rejectionReason, holdReason, expectedDeliveryDate, notes } = req.body;
+    const { status, notes } = req.body;
 
     const order = await Order.findById(req.params.id);
 
@@ -221,57 +239,10 @@ const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunc
       return;
     }
 
-    if (status === OrderStatus.REJECTED && !rejectionReason) {
-      res.status(400).json({
-        success: false,
-        message: 'Rejection reason is required',
-        error: 'Bad Request',
-      });
-      return;
-    }
-
-    if (status === OrderStatus.ON_HOLD && !holdReason) {
-      res.status(400).json({
-        success: false,
-        message: 'Hold reason is required',
-        error: 'Bad Request',
-      });
-      return;
-    }
-
-    if (status === OrderStatus.ACCEPTED && !expectedDeliveryDate) {
-      res.status(400).json({
-        success: false,
-        message: 'Expected delivery date is required when accepting order',
-        error: 'Bad Request',
-      });
-      return;
-    }
-
     const previousStatus = order.status;
     order.status = status as OrderStatus;
 
-    if (status === OrderStatus.REJECTED) order.rejectionReason = rejectionReason;
-    if (status === OrderStatus.ON_HOLD) order.holdReason = holdReason;
-    if (status === OrderStatus.ACCEPTED && expectedDeliveryDate) {
-      order.expectedDeliveryDate = new Date(expectedDeliveryDate).toISOString();
-      order.approvedAt = new Date().toISOString();
-    }
-    if (status === OrderStatus.DISPATCHED) order.dispatchedAt = new Date().toISOString();
-    if (status === OrderStatus.DELIVERED) order.deliveredAt = new Date().toISOString();
-    if (status === OrderStatus.CANCELLED) {
-      order.cancelledAt = new Date().toISOString();
-      order.cancellationReason = notes;
-    }
-
-    order.timeline.push({
-      status: status as OrderStatus,
-      note: notes || `Status changed to ${status}`,
-      timestamp: new Date().toISOString(),
-      updatedBy: String(req.user!._id),
-    });
-
-    if (status === OrderStatus.ACCEPTED && previousStatus === OrderStatus.PENDING) {
+    if (status === OrderStatus.PROCESSING && previousStatus === OrderStatus.PENDING) {
       for (const item of order.items) {
         const product = await Product.findById(item.product);
         if (product) {
@@ -295,39 +266,51 @@ const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunc
       }
     }
 
-    if ((status === OrderStatus.REJECTED || status === OrderStatus.CANCELLED) &&
-        (previousStatus === OrderStatus.ACCEPTED || previousStatus === OrderStatus.PENDING)) {
-      for (const item of order.items) {
-        const product = await Product.findById(item.product);
-        if (product) {
-          const oldStock = product.stockQuantity;
-          product.stockQuantity += item.quantity;
-          await product.save();
+    if (status === OrderStatus.DELIVERED) {
+      order.deliveredAt = new Date().toISOString();
+    }
 
-          await InventoryLog.create({
-            product: product._id,
-            action: InventoryAction.STOCK_IN,
-            quantity: item.quantity,
-            previousStock: oldStock,
-            newStock: product.stockQuantity,
-            referenceId: String(order._id),
-            referenceModel: 'Order',
-            performedBy: req.user?._id,
-            notes: `Stock restored for ${status} Order ${order.orderNumber}`,
-          });
+    if (status === OrderStatus.CANCELLED) {
+      order.cancelledAt = new Date().toISOString();
+      order.cancellationReason = notes;
+      if (previousStatus === OrderStatus.PROCESSING || previousStatus === OrderStatus.PENDING) {
+        for (const item of order.items) {
+          const product = await Product.findById(item.product);
+          if (product) {
+            const oldStock = product.stockQuantity;
+            product.stockQuantity += item.quantity;
+            await product.save();
+
+            await InventoryLog.create({
+              product: product._id,
+              action: InventoryAction.STOCK_IN,
+              quantity: item.quantity,
+              previousStock: oldStock,
+              newStock: product.stockQuantity,
+              referenceId: String(order._id),
+              referenceModel: 'Order',
+              performedBy: req.user?._id,
+              notes: `Stock restored for cancelled Order ${order.orderNumber}`,
+            });
+          }
         }
       }
     }
 
+    order.timeline.push({
+      status: status as OrderStatus,
+      note: notes || `Status changed to ${status}`,
+      timestamp: new Date().toISOString(),
+      updatedBy: String(req.user!._id),
+    });
+
     await order.save();
 
     const notificationTypeMap: Record<string, NotificationType> = {
-      [OrderStatus.ACCEPTED]: NotificationType.ORDER_ACCEPTED,
-      [OrderStatus.ON_HOLD]: NotificationType.ORDER_ON_HOLD,
-      [OrderStatus.REJECTED]: NotificationType.ORDER_REJECTED,
-      [OrderStatus.DISPATCHED]: NotificationType.ORDER_DISPATCHED,
-      [OrderStatus.READY_FOR_DISTRIBUTION]: NotificationType.ORDER_READY,
+      [OrderStatus.PROCESSING]: NotificationType.ORDER_PROCESSING,
+      [OrderStatus.OUT_FOR_DELIVERY]: NotificationType.ORDER_OUT_FOR_DELIVERY,
       [OrderStatus.DELIVERED]: NotificationType.ORDER_DELIVERED,
+      [OrderStatus.CANCELLED]: NotificationType.ORDER_CANCELLED,
     };
 
     const notifType = notificationTypeMap[status];
@@ -335,7 +318,7 @@ const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunc
       await createNotification(
         (order.client as string).toString(),
         notifType,
-        `Order ${status.replace('_', ' ').toUpperCase()}`,
+        `Order ${status.replace(/_/g, ' ').toUpperCase()}`,
         `Order ${order.orderNumber} status updated to ${status.replace(/_/g, ' ')}.`,
         String(order._id),
         'Order'
@@ -343,9 +326,6 @@ const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunc
     }
 
     const actionMap: Record<string, ActivityAction> = {
-      [OrderStatus.ACCEPTED]: ActivityAction.APPROVE,
-      [OrderStatus.REJECTED]: ActivityAction.REJECT,
-      [OrderStatus.DISPATCHED]: ActivityAction.DISPATCH,
       [OrderStatus.DELIVERED]: ActivityAction.DELIVER,
     };
 
@@ -365,6 +345,138 @@ const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunc
     res.status(200).json({
       success: true,
       message: `Order status updated to ${status}`,
+      data: populatedOrder,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { items, notes } = req.body;
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found', error: 'Not Found' });
+      return;
+    }
+
+    if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
+      res.status(400).json({
+        success: false,
+        message: `${order.status === OrderStatus.DELIVERED ? 'Delivered' : 'Cancelled'} orders cannot be modified`,
+        error: 'Bad Request',
+      });
+      return;
+    }
+
+    if (order.status === OrderStatus.PROCESSING && items) {
+      for (const oldItem of order.items) {
+        const product = await Product.findById(oldItem.product);
+        if (product) {
+          product.stockQuantity += oldItem.quantity;
+          product.salesCount -= oldItem.quantity;
+          await product.save();
+        }
+      }
+    }
+
+    if (items) {
+      const orderItems: any[] = [];
+      let subtotal = 0;
+
+      for (const item of items) {
+        const product = await Product.findById(item.product);
+
+        if (!product) {
+          res.status(404).json({
+            success: false,
+            message: `Product ${item.product} not found`,
+            error: 'Not Found',
+          });
+          return;
+        }
+
+        if (!product.isActive) {
+          res.status(400).json({
+            success: false,
+            message: `Product ${product.name} is not active`,
+            error: 'Bad Request',
+          });
+          return;
+        }
+
+        if (product.stockQuantity < item.quantity) {
+          res.status(400).json({
+            success: false,
+            message: `Insufficient stock for ${product.name}. Available: ${product.stockQuantity}`,
+            error: 'Bad Request',
+          });
+          return;
+        }
+
+        const price = product.offerPrice || product.price;
+        const total = price * item.quantity;
+        subtotal += total;
+
+        orderItems.push({
+          product: product._id,
+          productName: product.name,
+          sku: product.sku,
+          quantity: item.quantity,
+          price,
+          total,
+        });
+      }
+
+      if (order.status === OrderStatus.PROCESSING) {
+        for (const newItem of orderItems) {
+          const product = await Product.findById(newItem.product);
+          if (product) {
+            product.stockQuantity -= newItem.quantity;
+            product.salesCount += newItem.quantity;
+            await product.save();
+          }
+        }
+      }
+
+      const tax = Math.round(subtotal * 0.18 * 100) / 100;
+      order.items = orderItems as any;
+      order.subtotal = subtotal;
+      order.tax = tax;
+      order.total = subtotal + tax;
+    }
+
+    if (notes !== undefined) {
+      order.notes = notes;
+    }
+
+    order.timeline.push({
+      status: order.status,
+      note: 'Order modified',
+      timestamp: new Date().toISOString(),
+      updatedBy: String(req.user!._id),
+    });
+
+    await order.save();
+
+    await ActivityLog.create({
+      user: req.user?._id,
+      action: ActivityAction.UPDATE,
+      resource: 'Order',
+      resourceId: req.params.id,
+      details: `Order ${order.orderNumber} modified`,
+    });
+
+    const populatedOrder = await Order.findById(order._id)
+      .populate('client', 'storeName ownerName email mobile')
+      .populate('items.product', 'name images');
+
+    res.status(200).json({
+      success: true,
+      message: 'Order updated successfully',
       data: populatedOrder,
     });
   } catch (error) {
@@ -471,19 +583,7 @@ const cancelOrder = async (req: AuthRequest, res: Response, next: NextFunction):
       return;
     }
 
-    const clientStr = (order.client as any).toString ? (order.client as any).toString() : order.client;
-    const userStr = req.user?._id?.toString();
-
-    if (clientStr !== userStr && req.user?.role !== 'super_admin' && req.user?.role !== 'admin') {
-      res.status(403).json({
-        success: false,
-        message: 'Not authorized to cancel this order',
-        error: 'Forbidden',
-      });
-      return;
-    }
-
-    const cancellableStatuses = [OrderStatus.PENDING, OrderStatus.ACCEPTED];
+    const cancellableStatuses = [OrderStatus.PENDING, OrderStatus.PROCESSING];
     if (!cancellableStatuses.includes(order.status)) {
       res.status(400).json({
         success: false,
@@ -496,16 +596,16 @@ const cancelOrder = async (req: AuthRequest, res: Response, next: NextFunction):
     const orderPrevStatus = order.status;
     order.status = OrderStatus.CANCELLED;
     order.cancelledAt = new Date().toISOString();
-    order.cancellationReason = reason || 'Cancelled by client';
+    order.cancellationReason = reason || 'Cancelled';
 
     order.timeline.push({
       status: OrderStatus.CANCELLED,
-      note: reason || 'Cancelled by client',
+      note: reason || 'Cancelled',
       timestamp: new Date().toISOString(),
       updatedBy: String(req.user!._id),
     });
 
-    if (orderPrevStatus === OrderStatus.ACCEPTED || orderPrevStatus === OrderStatus.PENDING) {
+    if (orderPrevStatus === OrderStatus.PROCESSING || orderPrevStatus === OrderStatus.PENDING) {
       for (const item of order.items) {
         const product = await Product.findById(item.product);
         if (product) {
@@ -531,8 +631,8 @@ const cancelOrder = async (req: AuthRequest, res: Response, next: NextFunction):
     await order.save();
 
     await createNotification(
-      clientStr,
-      NotificationType.ORDER_ON_HOLD,
+      (order.client as string).toString(),
+      NotificationType.ORDER_CANCELLED,
       'Order Cancelled',
       `Order ${order.orderNumber} has been cancelled.`,
       String(order._id),
@@ -554,6 +654,7 @@ export {
   createOrder,
   getOrderById,
   updateOrderStatus,
+  updateOrder,
   getMyOrders,
   getOrderInvoice,
   getOrderTracking,

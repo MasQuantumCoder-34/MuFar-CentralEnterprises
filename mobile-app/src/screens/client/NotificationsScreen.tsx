@@ -40,11 +40,11 @@ export default function NotificationsScreen() {
     setRefreshing(false);
   }, [loadNotifications]);
 
-  const handleMarkRead = async (id: number) => {
+  const handleMarkRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
     } catch { /* ignore */ }
   };
@@ -69,7 +69,7 @@ export default function NotificationsScreen() {
 
   const renderNotification = ({ item }: { item: Notification }) => (
     <TouchableOpacity
-      onPress={() => !item.isRead && handleMarkRead(item.id)}
+      onPress={() => !item.isRead && handleMarkRead(item._id)}
       className={`flex-row px-4 py-4 border-b border-gray-50 ${
         !item.isRead ? 'bg-primary-50/30' : 'bg-white'
       }`}
@@ -119,7 +119,7 @@ export default function NotificationsScreen() {
       <FlatList
         data={notifications}
         renderItem={renderNotification}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item._id}
         contentContainerClassName={notifications.length === 0 ? 'flex-1' : ''}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />

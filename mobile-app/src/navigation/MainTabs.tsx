@@ -27,15 +27,15 @@ export type MainTabParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
-  ProductList: { categoryId?: number; categoryName?: string; search?: string } | undefined;
-  ProductDetail: { productId: number };
+  ProductList: { categoryId?: string; categoryName?: string; search?: string } | undefined;
+  ProductDetail: { productId: string };
   Notifications: undefined;
 };
 
 export type CategoriesStackParamList = {
   Categories: undefined;
-  CategoryProducts: { categoryId: number; categoryName: string };
-  CategoryProductDetail: { productId: number };
+  CategoryProducts: { categoryId: string; categoryName: string };
+  CategoryProductDetail: { productId: string };
 };
 
 export type CartStackParamList = {
@@ -45,7 +45,7 @@ export type CartStackParamList = {
 
 export type OrdersStackParamList = {
   Orders: undefined;
-  OrderDetail: { orderId: number };
+  OrderDetail: { orderId: string };
 };
 
 export type ProfileStackParamList = {

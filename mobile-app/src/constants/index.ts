@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'https://api.mufarcommerce.com/api/v1';
+// Use 10.0.2.2 for Android emulator (maps to host localhost)
+// Change to your actual server IP for physical devices
+export const API_BASE_URL = 'http://10.0.2.2:5000/api';
 
 export const COLORS = {
   primary: '#2e7d32',

@@ -211,7 +211,7 @@ export default function ProductsPage() {
       key: 'category',
       header: 'Category',
       render: (product: IProduct) =>
-        typeof product.category === 'object' ? product.category.name : 'N/A',
+        product.category && typeof product.category === 'object' ? product.category.name : 'N/A',
     },
     {
       key: 'price',
