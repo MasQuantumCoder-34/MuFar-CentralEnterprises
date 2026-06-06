@@ -6,7 +6,7 @@ import { AuthRequest } from '../middleware/auth';
 const getCart = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     let cart = await Cart.findOne({ client: req.user?._id })
-      .populate('items.product', 'name sku price offerPrice images stockQuantity');
+      .populate('items.product', 'name sku mrp images stockQuantity');
 
     if (!cart) {
       cart = await Cart.create({ client: req.user?._id, items: [] });
@@ -69,8 +69,7 @@ const addCartItem = async (req: AuthRequest, res: Response, next: NextFunction):
         product: product._id as any,
         productName: product.name,
         sku: product.sku,
-        price: product.price,
-        offerPrice: product.offerPrice,
+        price: product.mrp,
         quantity,
         image: product.images.length > 0 ? product.images[0] : undefined,
         stockQuantity: product.stockQuantity,
@@ -80,7 +79,7 @@ const addCartItem = async (req: AuthRequest, res: Response, next: NextFunction):
     await cart.save();
 
     const populatedCart = await Cart.findById(cart._id)
-      .populate('items.product', 'name sku price offerPrice images stockQuantity');
+      .populate('items.product', 'name sku mrp images stockQuantity');
 
     res.status(200).json({
       success: true,
@@ -137,7 +136,7 @@ const updateCartItem = async (req: AuthRequest, res: Response, next: NextFunctio
     await cart.save();
 
     const populatedCart = await Cart.findById(cart._id)
-      .populate('items.product', 'name sku price offerPrice images stockQuantity');
+      .populate('items.product', 'name sku mrp images stockQuantity');
 
     res.status(200).json({
       success: true,
@@ -167,7 +166,7 @@ const removeCartItem = async (req: AuthRequest, res: Response, next: NextFunctio
     await cart.save();
 
     const populatedCart = await Cart.findById(cart._id)
-      .populate('items.product', 'name sku price offerPrice images stockQuantity');
+      .populate('items.product', 'name sku mrp images stockQuantity');
 
     res.status(200).json({
       success: true,

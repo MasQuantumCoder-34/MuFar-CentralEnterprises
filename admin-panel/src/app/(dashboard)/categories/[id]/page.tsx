@@ -137,12 +137,9 @@ export default function CategoryDetailPage() {
               </div>
               <CardContent className="p-4 space-y-2">
                 <p className="font-semibold text-sm line-clamp-1">{product.name}</p>
-                <p className="text-lg font-bold text-primary">₹{product.price.toLocaleString()}</p>
+                <p className="text-lg font-bold text-primary">₹{product.mrp.toLocaleString()}</p>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Stock: {product.stockQuantity}</span>
-                  {product.offerPrice && (
-                    <Badge variant="success">{Math.round((1 - product.offerPrice / product.price) * 100)}% OFF</Badge>
-                  )}
                 </div>
                 <Button
                   size="sm"
@@ -176,7 +173,7 @@ export default function CategoryDetailPage() {
                 </div>
                 <div>
                   <p className="font-medium text-sm">{selectedProduct.name}</p>
-                  <p className="text-xs text-muted-foreground">Price: ₹{selectedProduct.price} | Stock: {selectedProduct.stockQuantity}</p>
+                  <p className="text-xs text-muted-foreground">MRP: ₹{selectedProduct.mrp} | Stock: {selectedProduct.stockQuantity}</p>
                 </div>
               </div>
 
@@ -231,7 +228,7 @@ export default function CategoryDetailPage() {
               <div className="rounded-lg bg-muted p-3 text-sm">
                 <div className="flex justify-between">
                   <span>Total Amount</span>
-                  <span className="font-bold">₹{(selectedProduct.price * orderQty).toLocaleString()}</span>
+                  <span className="font-bold">₹{(selectedProduct.mrp * orderQty).toLocaleString()}</span>
                 </div>
               </div>
             </div>

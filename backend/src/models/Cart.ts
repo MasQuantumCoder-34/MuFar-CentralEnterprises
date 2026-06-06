@@ -9,7 +9,6 @@ const cartItemSchema = new Schema<ICartItem>(
     productName: { type: String, required: true },
     sku: { type: String, required: true },
     price: { type: Number, required: true },
-    offerPrice: { type: Number },
     quantity: { type: Number, required: true, min: 1, default: 1 },
     image: { type: String },
     stockQuantity: { type: Number, required: true },

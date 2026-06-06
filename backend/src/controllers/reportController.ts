@@ -98,7 +98,7 @@ const getInventoryReport = async (req: AuthRequest, res: Response, next: NextFun
       {
         $group: {
           _id: null,
-          totalValue: { $sum: { $multiply: ['$stockQuantity', '$price'] } },
+          totalValue: { $sum: { $multiply: ['$stockQuantity', '$mrp'] } },
         },
       },
     ]);

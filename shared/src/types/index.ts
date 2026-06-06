@@ -48,11 +48,9 @@ export interface IProduct {
   name: string;
   sku: string;
   category: string | ICategory;
-  brand?: string;
-  description?: string;
-  price: number;
-  offerPrice?: number;
+  mrp: number;
   images: string[];
+  sizes: string[];
   stockQuantity: number;
   lowStockThreshold: number;
   isActive: boolean;
@@ -105,7 +103,6 @@ export interface ICartItem {
   productName: string;
   sku: string;
   price: number;
-  offerPrice?: number;
   quantity: number;
   image?: string;
   stockQuantity: number;

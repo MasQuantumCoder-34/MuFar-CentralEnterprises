@@ -45,12 +45,9 @@ export const changePasswordSchema = z.object({
 
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
-  sku: z.string().min(1, 'SKU is required'),
   category: z.string().min(1, 'Category is required'),
-  brand: z.string().optional(),
-  description: z.string().optional(),
-  price: z.number().positive('Price must be positive'),
-  offerPrice: z.number().positive().optional(),
+  mrp: z.number().positive('MRP must be positive'),
+  sizes: z.array(z.string()).default([]),
   stockQuantity: z.number().int().min(0, 'Stock must be 0 or more'),
   lowStockThreshold: z.number().int().min(0).default(10),
   images: z.array(z.string()).default([]),
