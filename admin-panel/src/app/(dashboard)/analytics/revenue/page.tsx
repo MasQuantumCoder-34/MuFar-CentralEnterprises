@@ -23,6 +23,7 @@ import { TrendingUp } from 'lucide-react';
 export default function RevenueTrendPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics', 'revenue'],
+    staleTime: 5 * 60 * 1000,
     queryFn: () => api.get('/dashboard/revenue-trend').then(r => r.data.data || []),
   });
 

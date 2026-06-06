@@ -23,6 +23,7 @@ import { BarChart3 } from 'lucide-react';
 export default function OrderTrendPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics', 'orders'],
+    staleTime: 5 * 60 * 1000,
     queryFn: () => api.get('/dashboard/order-trend').then(r => r.data.data || []),
   });
 

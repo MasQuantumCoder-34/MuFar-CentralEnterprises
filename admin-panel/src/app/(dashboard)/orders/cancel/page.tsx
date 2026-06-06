@@ -44,9 +44,10 @@ export default function CancelOrdersPage() {
   const [cancelReason, setCancelReason] = useState('');
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['cancel-orders'],
+    queryKey: ['orders', 'pending-processing'],
+    staleTime: 30 * 1000,
     queryFn: () => api.get<IApiResponse<IOrder[]>>('/orders?status=pending,processing&limit=100').then(r => r.data.data || []),
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   });
 
   const cancelMutation = useMutation({
@@ -58,10 +59,9 @@ export default function CancelOrdersPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cancel-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending-processing'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['modify-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'recent'] });
       toast.success('Order cancelled successfully');
       setCancelOrderId(null);
       setCancelReason('');

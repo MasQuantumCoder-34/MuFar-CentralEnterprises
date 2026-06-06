@@ -40,6 +40,7 @@ export default function SettingsPage() {
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const res = await api.get<IApiResponse<ISettings>>('/settings');
       return res.data.data;

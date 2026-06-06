@@ -71,9 +71,10 @@ export default function ModifyOrdersPage() {
   const [editedNotes, setEditedNotes] = useState('');
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['modify-orders'],
+    queryKey: ['orders', 'pending-processing'],
+    staleTime: 30 * 1000,
     queryFn: () => api.get<IApiResponse<IOrder[]>>('/orders?status=pending,processing&limit=100').then(r => r.data.data || []),
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   });
 
   const selectedOrder = orders?.find(o => o._id === selectedOrderId) || (preselectedOrderId ? undefined : null);
@@ -120,10 +121,7 @@ export default function ModifyOrdersPage() {
       await api.put(`/orders/${selectedOrderId}`, { items, notes: editedNotes });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['modify-orders'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['cancel-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-orders'] });
       toast.success('Order modified successfully');
       setEditDialog(false);
     },

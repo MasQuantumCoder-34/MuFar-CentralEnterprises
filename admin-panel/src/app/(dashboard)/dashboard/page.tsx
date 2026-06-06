@@ -35,20 +35,23 @@ import { format } from 'date-fns';
 
 export default function DashboardPage() {
   const { data: categories } = useQuery({
-    queryKey: ['dashboard-categories'],
+    queryKey: ['categories'],
+    staleTime: 5 * 60 * 1000,
     queryFn: () => api.get<IApiResponse<ICategory[]>>('/categories').then(r => r.data.data || []),
   });
 
   const { data: recentOrders } = useQuery({
-    queryKey: ['dashboard-recent-orders'],
+    queryKey: ['orders', 'recent'],
+    staleTime: 30 * 1000,
     queryFn: () => api.get<IApiResponse<IOrder[]>>('/orders?limit=5').then(r => r.data.data || []),
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   const { data: clients } = useQuery({
-    queryKey: ['dashboard-clients'],
+    queryKey: ['clients'],
+    staleTime: 60 * 1000,
     queryFn: () => api.get<IApiResponse<IUser[]>>('/users?role=client&limit=100').then(r => r.data.data || []),
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   const actionCards = [

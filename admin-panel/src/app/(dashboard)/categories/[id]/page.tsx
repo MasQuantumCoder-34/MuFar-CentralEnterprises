@@ -54,18 +54,21 @@ export default function CategoryDetailPage() {
   const [orderQty, setOrderQty] = useState(1);
 
   const { data: category } = useQuery({
-    queryKey: ['category', id],
+    queryKey: ['categories', id],
     queryFn: () => api.get<IApiResponse<ICategory>>(`/categories/${id}`).then(r => r.data.data),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: products } = useQuery({
-    queryKey: ['category-products', id],
+    queryKey: ['products', id],
     queryFn: () => api.get<IApiResponse<IProduct[]>>(`/products?category=${id}`).then(r => r.data.data || []),
+    staleTime: 60 * 1000,
   });
 
   const { data: clients } = useQuery({
-    queryKey: ['clients', 'for-order'],
+    queryKey: ['clients'],
     queryFn: () => api.get<IApiResponse<IUser[]>>('/users?role=client&limit=100').then(r => r.data.data || []),
+    staleTime: 60 * 1000,
   });
 
   const createOrder = useMutation({
@@ -77,7 +80,7 @@ export default function CategoryDetailPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['category-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Order created successfully');
       setOrderDialog(false);

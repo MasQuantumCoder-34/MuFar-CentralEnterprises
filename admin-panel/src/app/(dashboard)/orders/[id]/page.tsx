@@ -64,6 +64,7 @@ export default function OrderDetailPage() {
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', id],
+    staleTime: 30 * 1000,
     queryFn: () => api.get<IApiResponse<IOrder>>(`/orders/${id}`).then(r => r.data.data!),
   });
 
@@ -86,9 +87,6 @@ export default function OrderDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['modify-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['cancel-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-orders'] });
       toast.success('Order status updated');
       form.reset({ status: '' });
     },
@@ -102,9 +100,6 @@ export default function OrderDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['modify-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['cancel-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-orders'] });
       toast.success('Order cancelled');
       setShowCancelDialog(false);
     },
