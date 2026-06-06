@@ -30,7 +30,11 @@ const getCategories = async (req: AuthRequest, res: Response, next: NextFunction
 
 const createCategory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const category = await Category.create(req.body);
+    const body = { ...req.body };
+    if (!body.parent || body.parent === 'none' || body.parent === 'null') {
+      delete body.parent;
+    }
+    const category = await Category.create(body);
 
     await ActivityLog.create({
       user: req.user?._id,
@@ -71,7 +75,11 @@ const getCategoryById = async (req: AuthRequest, res: Response, next: NextFuncti
 
 const updateCategory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const category = await Category.findByIdAndUpdate(req.params.id, req.body, {
+    const body = { ...req.body };
+    if (body.parent === 'none' || body.parent === 'null') {
+      body.parent = null;
+    }
+    const category = await Category.findByIdAndUpdate(req.params.id, body, {
       new: true,
       runValidators: true,
     }).populate('parent', 'name slug');
