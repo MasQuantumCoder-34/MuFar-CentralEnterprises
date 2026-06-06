@@ -178,6 +178,9 @@ export default function CategoriesPage() {
   };
 
   const onSubmit = (data: CategoryForm) => {
+    if (!data.parent || data.parent === 'none') {
+      delete data.parent;
+    }
     if (editingCategory) {
       updateMutation.mutate({ id: editingCategory._id, data });
     } else {
@@ -255,35 +258,7 @@ export default function CategoriesPage() {
                 maxImages={1}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Input {...form.register('description')} />
-            </div>
-            <div className="space-y-2">
-              <Label>Parent Category</Label>
-              <Select
-                value={form.watch('parent') || ''}
-                onValueChange={(v) => form.setValue('parent', v || undefined)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="None (top level)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (top level)</SelectItem>
-                  {(categories || [])
-                    .filter((c) => c._id !== editingCategory?._id)
-                    .map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Sort Order</Label>
-              <Input type="number" {...form.register('sortOrder')} />
-            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 Cancel
