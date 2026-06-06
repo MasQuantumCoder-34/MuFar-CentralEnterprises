@@ -8,11 +8,20 @@ import ActivityLog from '../models/ActivityLog';
 const getCategories = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const categories = await Category.find().populate('parent', 'name slug').sort({ sortOrder: 1, name: 1 });
+    const productCounts = await Product.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+    ]);
+    const countMap: Record<string, number> = {};
+    productCounts.forEach((p: any) => { countMap[String(p._id)] = p.count; });
+    const data = categories.map((c) => ({
+      ...c.toObject(),
+      productCount: countMap[String(c._id)] || 0,
+    }));
 
     res.status(200).json({
       success: true,
       message: 'Categories retrieved',
-      data: categories,
+      data,
     });
   } catch (error) {
     next(error);

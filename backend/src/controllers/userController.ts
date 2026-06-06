@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import User from '../models/User';
+import Order from '../models/Order';
 import { AuthRequest } from '../middleware/auth';
 import { ActivityAction } from '@mufar-commerce/shared';
 import ActivityLog from '../models/ActivityLog';
@@ -33,10 +34,21 @@ const getUsers = async (req: AuthRequest, res: Response, next: NextFunction): Pr
       .skip((page - 1) * limit)
       .limit(limit);
 
+    const orderCounts = await Order.aggregate([
+      { $match: { client: { $in: users.map((u) => u._id) } } },
+      { $group: { _id: '$client', count: { $sum: 1 } } },
+    ]);
+    const orderCountMap: Record<string, number> = {};
+    orderCounts.forEach((o: any) => { orderCountMap[String(o._id)] = o.count; });
+    const data = users.map((u) => ({
+      ...u.toObject(),
+      totalOrders: orderCountMap[String(u._id)] || 0,
+    }));
+
     res.status(200).json({
       success: true,
       message: 'Users retrieved',
-      data: users,
+      data,
       meta: { page, limit, total, totalPages },
     });
   } catch (error) {
@@ -48,15 +60,17 @@ const createUser = async (req: AuthRequest, res: Response, next: NextFunction): 
   try {
     const userData = req.body;
 
-    const existingUser = await User.findOne({ email: userData.email });
-    if (existingUser) {
-      res.status(409).json({ success: false, message: 'User with this email already exists', error: 'Conflict' });
-      return;
+    if (userData.email) {
+      const existingUser = await User.findOne({ email: userData.email });
+      if (existingUser) {
+        res.status(409).json({ success: false, message: 'User with this email already exists', error: 'Conflict' });
+        return;
+      }
     }
 
     const user = await User.create({
       ...userData,
-      mustChangePassword: true,
+      password: userData.password || Math.random().toString(36).slice(2, 10),
     });
 
     await ActivityLog.create({

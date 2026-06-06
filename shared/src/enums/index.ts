@@ -8,23 +8,18 @@ export enum UserRole {
 
 export enum OrderStatus {
   PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  ON_HOLD = 'on_hold',
-  REJECTED = 'rejected',
-  READY_FOR_DISTRIBUTION = 'ready_for_distribution',
-  DISPATCHED = 'dispatched',
+  PROCESSING = 'processing',
+  OUT_FOR_DELIVERY = 'out_for_delivery',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
 }
 
 export enum NotificationType {
   NEW_ORDER = 'new_order',
-  ORDER_ACCEPTED = 'order_accepted',
-  ORDER_ON_HOLD = 'order_on_hold',
-  ORDER_REJECTED = 'order_rejected',
+  ORDER_PROCESSING = 'order_processing',
+  ORDER_OUT_FOR_DELIVERY = 'order_out_for_delivery',
   ORDER_DELIVERED = 'order_delivered',
-  ORDER_DISPATCHED = 'order_dispatched',
-  ORDER_READY = 'order_ready',
+  ORDER_CANCELLED = 'order_cancelled',
   LOW_STOCK = 'low_stock',
 }
 

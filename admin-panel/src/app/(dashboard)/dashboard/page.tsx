@@ -2,15 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { apiFallback, DEMO_DASHBOARD, DEMO_ORDERS } from '@/lib/demoData';
-import StatsCard from '@/components/shared/StatsCard';
-import StatusBadge from '@/components/shared/StatusBadge';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import StatusBadge from '@/components/shared/StatusBadge';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   Table,
@@ -20,167 +16,236 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import {
+  ShoppingCart,
+  ClipboardList,
+  Edit,
+  XCircle,
+  FolderTree,
   Users,
   Package,
-  Tags,
-  ShoppingCart,
-  IndianRupee,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
+  ImageIcon,
+  Eye,
 } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import Link from 'next/link';
-import type { IDashboardStats, IOrder, IApiResponse } from '@/types';
+import Image from 'next/image';
+import type { ICategory, IOrder, IUser, IApiResponse } from '@/types';
 import { format } from 'date-fns';
 
 export default function DashboardPage() {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => apiFallback(
-      () => api.get<IApiResponse<IDashboardStats>>('/dashboard/admin').then(r => r.data.data!),
-      DEMO_DASHBOARD
-    ),
+  const { data: categories } = useQuery({
+    queryKey: ['dashboard-categories'],
+    queryFn: () => api.get<IApiResponse<ICategory[]>>('/categories').then(r => r.data.data || []),
   });
 
   const { data: recentOrders } = useQuery({
-    queryKey: ['recent-orders'],
-    queryFn: () => apiFallback(
-      () => api.get<IApiResponse<IOrder[]>>('/orders?limit=5&sort=-createdAt').then(r => r.data.data || []),
-      DEMO_ORDERS
-    ),
+    queryKey: ['dashboard-recent-orders'],
+    queryFn: () => api.get<IApiResponse<IOrder[]>>('/orders?limit=5').then(r => r.data.data || []),
+    refetchInterval: 10000,
   });
 
-  if (isLoading) return <LoadingSpinner />;
-  if (!stats) return <div className="text-destructive">Failed to load dashboard</div>;
+  const { data: clients } = useQuery({
+    queryKey: ['dashboard-clients'],
+    queryFn: () => api.get<IApiResponse<IUser[]>>('/users?role=client&limit=100').then(r => r.data.data || []),
+    refetchInterval: 30000,
+  });
 
-  const statCards = [
-    { icon: Users, label: 'Total Clients', value: stats.totalClients },
-    { icon: Package, label: 'Total Products', value: stats.totalProducts },
-    { icon: Tags, label: 'Total Categories', value: stats.totalCategories },
-    { icon: ShoppingCart, label: 'Total Orders', value: stats.totalOrders },
-    { icon: IndianRupee, label: 'Revenue', value: `₹${(stats.revenue || 0).toLocaleString()}` },
-    { icon: Clock, label: 'Pending Orders', value: stats.pendingOrders },
-    { icon: CheckCircle, label: 'Delivered Orders', value: stats.deliveredOrders },
-    { icon: AlertTriangle, label: 'Low Stock Products', value: stats.lowStockProducts, iconColor: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300' },
+  const actionCards = [
+    { label: 'Create Order', icon: ShoppingCart, href: '/orders/create', desc: 'Create a new order for a client', color: 'bg-blue-500 hover:bg-blue-600' },
+    { label: 'View Orders', icon: ClipboardList, href: '/orders', desc: 'Browse and search all orders', color: 'bg-emerald-500 hover:bg-emerald-600' },
+    { label: 'Modify Orders', icon: Edit, href: '/orders/modify', desc: 'Edit pending or processing orders', color: 'bg-amber-500 hover:bg-amber-600' },
+    { label: 'Cancel Orders', icon: XCircle, href: '/orders/cancel', desc: 'Cancel pending or processing orders', color: 'bg-red-500 hover:bg-red-600' },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your commerce platform</p>
+        <p className="text-muted-foreground">Internal B2B Order Management</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((s) => (
-          <StatsCard key={s.label} icon={s.icon} label={s.label} value={s.value} iconColor={s.iconColor} />
-        ))}
+        {actionCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Link key={card.href} href={card.href}>
+              <Card className={`${card.color} text-white cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg`}>
+                <CardContent className="p-6">
+                  <Icon className="h-8 w-8 mb-3 opacity-90" />
+                  <p className="text-lg font-bold">{card.label}</p>
+                  <p className="text-sm text-white/80 mt-1">{card.desc}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Revenue Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={stats.revenueTrend || []}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="amount"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <FolderTree className="h-5 w-5 text-primary" />
+            Categories
+          </h2>
+          <Link href="/categories" className="text-sm text-primary hover:underline">View all</Link>
+        </div>
+        {!categories ? (
+          <LoadingSpinner />
+        ) : categories.length === 0 ? (
+          <Card><CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <FolderTree className="h-12 w-12 mb-3" />
+            <p>No categories yet</p>
+            <Link href="/categories"><Button variant="link" className="mt-2">Create your first category</Button></Link>
+          </CardContent></Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {categories.map((cat) => (
+              <Link key={cat._id} href={`/categories/${cat._id}`}>
+                <Card className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/50 h-full">
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-3">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex items-center justify-center">
+                      {cat.image ? (
+                        <Image src={cat.image} alt={cat.name} width={80} height={80} className="object-cover w-full h-full" />
+                      ) : (
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm group-hover:text-primary transition-colors">{cat.name}</p>
+                      {cat.productCount !== undefined && (
+                        <p className="text-xs text-muted-foreground">{cat.productCount} products</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section> */}
 
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5 text-primary" />
+            Recent Orders
+          </h2>
+          <Link href="/orders" className="text-sm text-primary hover:underline">View all</Link>
+        </div>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Order Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stats.orderTrend || []}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#2563eb" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Recent Orders</CardTitle>
-          <Link href="/orders" className="text-sm text-primary hover:underline">
-            View all
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order #</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(recentOrders || []).length === 0 ? (
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No recent orders
-                  </TableCell>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                (recentOrders || []).map((order) => (
-                  <TableRow key={order._id}>
-                    <TableCell>
-                      <Link href={`/orders/${order._id}`} className="font-medium text-primary hover:underline">
-                        {order.orderNumber}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {typeof order.client === 'object' ? order.client.storeName || order.client.name : order.client}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={order.status} />
-                    </TableCell>
-                    <TableCell>₹{order.total.toLocaleString()}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(order.createdAt), 'dd MMM yyyy')}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {!recentOrders ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8"><LoadingSpinner /></TableCell></TableRow>
+                ) : recentOrders.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No recent orders</TableCell></TableRow>
+                ) : (
+                  recentOrders.map((order) => (
+                    <TableRow key={order._id}>
+                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                      <TableCell>
+                        {order.client && typeof order.client === 'object'
+                          ? order.client.storeName || order.client.name
+                          : order.client}
+                      </TableCell>
+                      <TableCell>₹{order.total.toLocaleString()}</TableCell>
+                      <TableCell><StatusBadge status={order.status} /></TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {format(new Date(order.createdAt), 'dd MMM yyyy')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Link href={`/orders/${order._id}`}>
+                            <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+                          </Link>
+                          {(order.status === 'pending' || order.status === 'processing') && (
+                            <>
+                              <Link href={`/orders/modify?orderId=${order._id}`}>
+                                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+                              </Link>
+                              <Link href={`/orders/cancel?orderId=${order._id}`}>
+                                <Button variant="ghost" size="icon"><XCircle className="h-4 w-4" /></Button>
+                              </Link>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            Clients
+          </h2>
+          <Link href="/clients" className="text-sm text-primary hover:underline">View all</Link>
+        </div>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Store Name</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Mobile</TableHead>
+                  <TableHead>Orders</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!clients ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8"><LoadingSpinner /></TableCell></TableRow>
+                ) : clients.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No clients yet</TableCell></TableRow>
+                ) : (
+                  clients.map((client) => (
+                    <TableRow key={client._id}>
+                      <TableCell className="font-medium">{client.storeName || client.name}</TableCell>
+                      <TableCell>{client.ownerName || '-'}</TableCell>
+                      <TableCell>{client.mobile || '-'}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1 text-sm">
+                          <Package className="h-3 w-3 text-muted-foreground" />
+                          {client.totalOrders ?? 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Link href={`/orders/create?clientId=${client._id}`}>
+                            <Button variant="ghost" size="icon"><ShoppingCart className="h-4 w-4" /></Button>
+                          </Link>
+                          <Link href={`/orders?clientId=${client._id}`}>
+                            <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

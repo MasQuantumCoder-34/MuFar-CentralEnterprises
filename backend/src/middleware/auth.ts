@@ -68,7 +68,7 @@ const protect = async (req: AuthRequest, res: Response, next: NextFunction): Pro
     req.user = {
       _id: String(user._id),
       id: String(user._id),
-      email: user.email,
+      email: user.email!,
       role: user.role as UserRole,
       storeName: user.storeName,
     };

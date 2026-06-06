@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { apiFallback, DEMO_DASHBOARD } from '@/lib/demoData';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -44,7 +43,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Download, IndianRupee, Package, Users } from 'lucide-react';
+import { Download, Package, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -69,45 +68,31 @@ export default function ReportsPage() {
 
   const { data: salesData, isLoading: salesLoading } = useQuery<SalesReport[]>({
     queryKey: ['reports', 'sales', reportType],
-    queryFn: () => apiFallback<SalesReport[]>(
-      async () => {
-        const res = await api.get(`/reports/sales?type=${reportType}`);
-        return (res.data?.data || []) as SalesReport[];
-      },
-      (DEMO_DASHBOARD.revenueTrend || []).map((r, i) => ({
-        period: r.date,
-        totalOrders: 10 + i * 3,
-        totalItems: 25 + i * 8,
-        totalRevenue: r.amount,
-      }))
-    ),
+    queryFn: async () => {
+      const res = await api.get(`/reports/sales?type=${reportType}`);
+      return (res.data?.data?.breakdown || []) as SalesReport[];
+    },
   });
 
   const { data: topCustomers } = useQuery({
     queryKey: ['reports', 'top-customers'],
-    queryFn: () => apiFallback(
-      async () => {
-        const res = await api.get('/reports/top-customers');
-        return (res.data?.data || []) as TopCustomer[];
-      },
-      [] as TopCustomer[]
-    ),
+    queryFn: async () => {
+      const res = await api.get('/reports/customers');
+      return (res.data?.data?.topCustomers || []) as TopCustomer[];
+    },
   });
 
   const { data: lowStockData } = useQuery({
     queryKey: ['reports', 'low-stock'],
-    queryFn: () => apiFallback(
-      async () => {
-        const res = await api.get('/reports/low-stock');
-        return (res.data?.data || []) as any[];
-      },
-      [] as any[]
-    ),
+    queryFn: async () => {
+      const res = await api.get('/reports/inventory');
+      return (res.data?.data?.lowStockProducts || []) as any[];
+    },
   });
 
   const exportCSV = async (type: string) => {
     try {
-      const res = await api.get(`/reports/export/${type}`, { responseType: 'blob' });
+      const res = await api.get(`/reports/export?type=${type}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
       a.href = url;

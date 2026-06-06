@@ -7,7 +7,6 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { setToken, removeToken, getToken } from '@/lib/auth';
 import type { IUser, ILoginResponse, IJwtPayload } from '@/types';
@@ -36,7 +35,6 @@ export const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<IUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   const tokenPayload = (() => {
     if (!user) return null;
@@ -85,10 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     removeToken();
     localStorage.removeItem('user');
-    localStorage.removeItem('demo_mode');
     setUserState(null);
-    router.push('/login');
-  }, [router]);
+    window.location.href = '/login';
+  }, []);
 
   return (
     <AuthContext.Provider

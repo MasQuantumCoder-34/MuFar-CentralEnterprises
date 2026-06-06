@@ -14,17 +14,14 @@ const userSchema = new Schema<IUserDocument>(
     name: { type: String, trim: true },
     email: {
       type: String,
-      required: [true, 'Email is required'],
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true,
     },
-    mobile: {
-      type: String,
-      required: [true, 'Mobile number is required'],
-      trim: true,
-    },
+    mobile: { type: String, trim: true },
     alternateMobile: { type: String, trim: true },
+    notes: { type: String, trim: true },
     password: {
       type: String,
       required: [true, 'Password is required'],
@@ -70,7 +67,7 @@ userSchema.pre<IUserDocument>('save', async function (next) {
   }
   try {
     const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.password = await bcrypt.hash(this.password!, salt);
     next();
   } catch (error: any) {
     next(error);
@@ -78,7 +75,7 @@ userSchema.pre<IUserDocument>('save', async function (next) {
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
+  return bcrypt.compare(candidatePassword, this.password!);
 };
 
 userSchema.index({ email: 1 });

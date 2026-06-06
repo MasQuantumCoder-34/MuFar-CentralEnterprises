@@ -7,8 +7,8 @@ import QuantitySelector from './QuantitySelector';
 
 interface CartItemProps {
   item: CartItemType;
-  onQuantityChange: (productId: number, quantity: number) => void;
-  onRemove: (productId: number) => void;
+  onQuantityChange: (product: string, quantity: number) => void;
+  onRemove: (product: string) => void;
 }
 
 export default function CartItem({
@@ -16,11 +16,13 @@ export default function CartItem({
   onQuantityChange,
   onRemove,
 }: CartItemProps) {
-  const price = item.product.offerPrice || item.product.price;
+  const productId = typeof item.product === 'string' ? item.product : item.product._id;
+  const productData = typeof item.product === 'object' ? item.product : null;
+  const price = productData ? (productData.offerPrice || productData.price) : 0;
   const lineTotal = price * item.quantity;
   const imageUrl =
-    item.product.images && item.product.images.length > 0
-      ? { uri: item.product.images[0] }
+    productData?.images && productData.images.length > 0
+      ? { uri: productData.images[0] }
       : undefined;
 
   return (
@@ -42,14 +44,14 @@ export default function CartItem({
         <View className="flex-row justify-between">
           <View className="flex-1 mr-2">
             <Text className="text-sm font-semibold text-gray-800" numberOfLines={2}>
-              {item.product.name}
+              {productData?.name || ''}
             </Text>
             <Text className="text-xs text-gray-500 mt-0.5">
-              SKU: {item.product.sku}
+              SKU: {productData?.sku || ''}
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => onRemove(item.productId)}
+            onPress={() => onRemove(productId)}
             className="p-1"
           >
             <Ionicons name="trash-outline" size={18} color={COLORS.error} />
@@ -61,7 +63,7 @@ export default function CartItem({
           </Text>
           <QuantitySelector
             quantity={item.quantity}
-            onChange={(q) => onQuantityChange(item.productId, q)}
+            onChange={(q) => onQuantityChange(productId, q)}
             min={1}
           />
         </View>

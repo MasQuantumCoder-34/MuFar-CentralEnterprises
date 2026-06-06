@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,7 +17,7 @@ import {
 } from '@/components/ui/card';
 import { Store, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import type { IUser, ILoginResponse } from '@/types';
+import type { ILoginResponse } from '@/types';
 import api from '@/lib/api';
 import { setToken } from '@/lib/auth';
 
@@ -29,65 +28,7 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-const DEMO_USERS: Record<string, { password: string; user: IUser }> = {
-  'admin@mufar.com': {
-    password: 'Admin@123',
-    user: {
-      _id: 'demo-admin-001',
-      storeName: 'Mufar Technologies',
-      ownerName: 'Super Admin',
-      name: 'Super Admin',
-      email: 'admin@mufar.com',
-      mobile: '9999999999',
-      role: 'super_admin',
-      isActive: true,
-      isLocked: false,
-      mustChangePassword: false,
-      loginAttempts: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as IUser,
-  },
-  'manager@mufar.com': {
-    password: 'Manager@123',
-    user: {
-      _id: 'demo-manager-001',
-      storeName: 'Mufar Technologies',
-      ownerName: 'Store Manager',
-      name: 'Store Manager',
-      email: 'manager@mufar.com',
-      mobile: '9999999998',
-      role: 'manager',
-      isActive: true,
-      isLocked: false,
-      mustChangePassword: false,
-      loginAttempts: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as IUser,
-  },
-  'client@mufar.com': {
-    password: 'Client@123',
-    user: {
-      _id: 'demo-client-001',
-      storeName: 'Demo Store',
-      ownerName: 'John Client',
-      name: 'John Client',
-      email: 'client@mufar.com',
-      mobile: '9999999997',
-      role: 'client',
-      isActive: true,
-      isLocked: false,
-      mustChangePassword: false,
-      loginAttempts: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as IUser,
-  },
-};
-
 export default function LoginPage() {
-  const router = useRouter();
   const { setUser, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -100,7 +41,7 @@ export default function LoginPage() {
   });
 
   if (isAuthenticated) {
-    router.push('/dashboard');
+    window.location.href = '/dashboard';
     return null;
   }
 
@@ -112,29 +53,14 @@ export default function LoginPage() {
       setToken(accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.removeItem('demo_mode');
       setUser(userData);
       if (userData.mustChangePassword) {
-        router.push('/reset-password');
+        window.location.href = '/reset-password';
         return;
       }
       toast.success('Login successful');
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     } catch (err: any) {
-      if (!err?.response) {
-        const demo = DEMO_USERS[data.email.toLowerCase()];
-        if (demo && demo.password === data.password) {
-          const demoToken = 'demo-jwt-token-' + Date.now();
-          setToken(demoToken);
-          localStorage.setItem('refreshToken', demoToken);
-          localStorage.setItem('user', JSON.stringify(demo.user));
-          localStorage.setItem('demo_mode', 'true');
-          setUser(demo.user);
-          toast.success('Offline mode — using demo account');
-          router.push('/dashboard');
-          return;
-        }
-      }
       const msg = err?.response?.data?.message || 'Invalid email or password';
       setError(msg);
       toast.error(msg);
@@ -188,14 +114,6 @@ export default function LoginPage() {
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
-          <div className="mt-6 rounded-md bg-muted p-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Demo Credentials (Offline Mode)</p>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              <p><span className="font-medium text-foreground">Admin:</span> admin@mufar.com / Admin@123</p>
-              <p><span className="font-medium text-foreground">Manager:</span> manager@mufar.com / Manager@123</p>
-              <p><span className="font-medium text-foreground">Client:</span> client@mufar.com / Client@123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -12,7 +12,7 @@ export const notificationService = {
     return response.data;
   },
 
-  async markAsRead(id: number): Promise<void> {
+  async markAsRead(id: string): Promise<void> {
     await api.put(`/notifications/${id}/read`);
   },
 

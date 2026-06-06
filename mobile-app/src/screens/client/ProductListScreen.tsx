@@ -90,8 +90,8 @@ export default function ProductListScreen() {
   };
 
   const handleAddToCart = (product: Product) => {
-    if (product.stock <= 0) return;
-    addItem({ productId: product.id, product, quantity: 1 });
+    if (product.stockQuantity <= 0) return;
+    addItem({ product, quantity: 1 });
   };
 
   const sortOptions: { label: string; value: ProductFilters['sort'] }[] = [
@@ -106,7 +106,7 @@ export default function ProductListScreen() {
       <ProductCard
         product={item}
         variant={viewMode}
-        onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
+        onPress={() => navigation.navigate('ProductDetail', { productId: item._id })}
         onAddToCart={() => handleAddToCart(item)}
       />
     </View>
@@ -175,7 +175,7 @@ export default function ProductListScreen() {
         <FlatList
           data={products}
           renderItem={renderProduct}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item._id}
           numColumns={viewMode === 'grid' ? 2 : 1}
           key={viewMode}
           contentContainerClassName={products.length === 0 ? 'flex-1' : 'px-2 pb-4'}

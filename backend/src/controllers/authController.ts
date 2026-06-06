@@ -73,7 +73,7 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction): Promi
     const payload: IJwtPayload = {
       userId: String(user._id),
       role: user.role as UserRole,
-      email: user.email,
+      email: user.email!,
     };
 
     const { accessToken, refreshToken } = createTokenPair(payload);
@@ -148,7 +148,7 @@ const refresh = async (req: AuthRequest, res: Response, next: NextFunction): Pro
     const payload: IJwtPayload = {
       userId: String(user._id),
       role: user.role as UserRole,
-      email: user.email,
+      email: user.email!,
     };
 
     const { accessToken, refreshToken } = createTokenPair(payload);
@@ -204,10 +204,12 @@ const changePassword = async (req: AuthRequest, res: Response, next: NextFunctio
       return;
     }
 
-    const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) {
-      res.status(400).json({ success: false, message: 'Current password is incorrect', error: 'Bad Request' });
-      return;
+    if (!user.mustChangePassword) {
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        res.status(400).json({ success: false, message: 'Current password is incorrect', error: 'Bad Request' });
+        return;
+      }
     }
 
     user.password = newPassword;

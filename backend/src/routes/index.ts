@@ -10,6 +10,7 @@ import reportRoutes from './reportRoutes';
 import notificationRoutes from './notificationRoutes';
 import settingsRoutes from './settingsRoutes';
 import inventoryRoutes from './inventoryRoutes';
+import uploadRoutes from './uploadRoutes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/reports', reportRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/upload', uploadRoutes);
 
 export = router;

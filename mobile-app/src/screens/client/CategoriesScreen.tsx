@@ -61,10 +61,10 @@ export default function CategoriesScreen() {
         ) : (
           categories.map((cat) => (
             <TouchableOpacity
-              key={cat.id}
+              key={cat._id}
               onPress={() =>
                 navigation.navigate('CategoryProducts', {
-                  categoryId: cat.id,
+                  categoryId: cat._id,
                   categoryName: cat.name,
                 })
               }
@@ -91,28 +91,6 @@ export default function CategoriesScreen() {
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
               </View>
-              {cat.children && cat.children.length > 0 && (
-                <View className="border-t border-gray-100 px-4 py-2">
-                  {cat.children.map((child) => (
-                    <TouchableOpacity
-                      key={child.id}
-                      onPress={() =>
-                        navigation.navigate('CategoryProducts', {
-                          categoryId: child.id,
-                          categoryName: child.name,
-                        })
-                      }
-                      className="flex-row items-center py-2"
-                    >
-                      <Ionicons name="chevron-forward" size={14} color={COLORS.textLight} />
-                      <Text className="text-sm text-gray-600 ml-2">{child.name}</Text>
-                      {child.productCount !== undefined && (
-                        <Text className="text-xs text-gray-400 ml-2">({child.productCount})</Text>
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
             </TouchableOpacity>
           ))
         )}

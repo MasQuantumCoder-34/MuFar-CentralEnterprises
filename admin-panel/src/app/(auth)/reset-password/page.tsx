@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,7 +21,7 @@ import { toast } from 'sonner';
 
 const resetSchema = z
   .object({
-    currentPassword: z.string().min(1, 'Current password is required'),
+    currentPassword: z.string().optional(),
     newPassword: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
@@ -34,8 +33,7 @@ const resetSchema = z
 type ResetForm = z.infer<typeof resetSchema>;
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [error, setError] = useState('');
 
   const {
@@ -49,10 +47,9 @@ export default function ResetPasswordPage() {
   const onSubmit = async (data: ResetForm) => {
     setError('');
     try {
-      await api.post('/auth/change-password', {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      });
+      const payload: any = { newPassword: data.newPassword };
+      if (!user?.mustChangePassword) payload.currentPassword = data.currentPassword;
+      await api.post('/auth/change-password', payload);
       toast.success('Password changed successfully. Please login again.');
       logout();
     } catch (err: any) {
@@ -81,19 +78,21 @@ export default function ResetPasswordPage() {
               {error}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Current Password</Label>
-            <Input
-              id="currentPassword"
-              type="password"
-              {...register('currentPassword')}
-            />
-            {errors.currentPassword && (
-              <p className="text-xs text-destructive">
-                {errors.currentPassword.message}
-              </p>
-            )}
-          </div>
+          {!user?.mustChangePassword && (
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                {...register('currentPassword')}
+              />
+              {errors.currentPassword && (
+                <p className="text-xs text-destructive">
+                  {errors.currentPassword.message}
+                </p>
+              )}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="newPassword">New Password</Label>
             <Input

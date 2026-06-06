@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,6 +46,7 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const queryClient = useQueryClient();
   const [notifOpen, setNotifOpen] = useState(false);
 
   const { data: notifData } = useQuery({
@@ -55,6 +56,15 @@ export default function Header({ onMenuClick }: HeaderProps) {
       return res.data.data || [];
     },
     refetchInterval: 30000,
+  });
+
+  const markRead = useMutation({
+    mutationFn: async (id: string) => {
+      await api.put(`/notifications/${id}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
   });
 
   const notifications = notifData || [];
@@ -106,7 +116,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
                     key={n._id}
                     href={n.referenceId ? `/orders/${n.referenceId}` : '/notifications'}
                     className="block border-b p-3 text-sm transition-colors hover:bg-muted/50 last:border-0"
-                    onClick={() => setNotifOpen(false)}
+                    onClick={() => {
+                      setNotifOpen(false);
+                      if (!n.isRead) markRead.mutate(n._id);
+                    }}
                   >
                     <p className="font-medium">{n.title}</p>
                     <p className="text-xs text-muted-foreground">{n.message}</p>

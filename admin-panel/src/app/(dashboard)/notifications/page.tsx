@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { apiFallback, DEMO_NOTIFICATIONS } from '@/lib/demoData';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -28,17 +27,14 @@ export default function NotificationsPage() {
   const queryClient = useQueryClient();
   const [typeFilter, setTypeFilter] = useState('');
 
-  const { data: notifications, isLoading } = useQuery({
+  const { data: notifications } = useQuery({
     queryKey: ['notifications', typeFilter],
-    queryFn: () => apiFallback(
-      async () => {
-        const params = new URLSearchParams();
-        if (typeFilter) params.set('type', typeFilter);
-        const res = await api.get<IApiResponse<INotification[]>>(`/notifications?${params}`);
-        return res.data.data || [];
-      },
-      DEMO_NOTIFICATIONS
-    ),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (typeFilter) params.set('type', typeFilter);
+      const res = await api.get<IApiResponse<INotification[]>>(`/notifications?${params}`);
+      return res.data.data || [];
+    },
   });
 
   const markRead = useMutation({
@@ -81,10 +77,11 @@ export default function NotificationsPage() {
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="new_order">New Order</SelectItem>
-              <SelectItem value="low_stock">Low Stock</SelectItem>
-              <SelectItem value="order_accepted">Accepted</SelectItem>
-              <SelectItem value="order_rejected">Rejected</SelectItem>
+              <SelectItem value="order_processing">Processing</SelectItem>
+              <SelectItem value="order_out_for_delivery">Out for Delivery</SelectItem>
               <SelectItem value="order_delivered">Delivered</SelectItem>
+              <SelectItem value="order_cancelled">Cancelled</SelectItem>
+              <SelectItem value="low_stock">Low Stock</SelectItem>
             </SelectContent>
           </Select>
           {unreadCount > 0 && (

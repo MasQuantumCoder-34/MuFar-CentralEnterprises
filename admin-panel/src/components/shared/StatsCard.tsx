@@ -19,35 +19,35 @@ export default function StatsCard({
 }: StatsCardProps) {
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div
             className={cn(
-              'rounded-lg p-3',
+              'rounded-lg p-2 sm:p-3',
               iconColor || 'bg-primary/10 text-primary'
             )}
           >
-            <Icon className="h-6 w-6" />
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           {trend && (
             <div
               className={cn(
-                'flex items-center text-sm',
+                'flex items-center text-xs sm:text-sm',
                 trend.isUp ? 'text-green-600' : 'text-red-600'
               )}
             >
               {trend.isUp ? (
-                <TrendingUp className="mr-1 h-4 w-4" />
+                <TrendingUp className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
               ) : (
-                <TrendingDown className="mr-1 h-4 w-4" />
+                <TrendingDown className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
               )}
               {Math.abs(trend.value)}%
             </div>
           )}
         </div>
-        <div className="mt-4">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
+        <div className="mt-2 sm:mt-4">
+          <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
+          <p className="text-lg font-bold sm:text-2xl">{value}</p>
         </div>
       </CardContent>
     </Card>

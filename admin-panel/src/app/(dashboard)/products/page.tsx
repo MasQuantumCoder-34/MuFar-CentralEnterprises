@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '@/lib/api';
-import { apiFallback, DEMO_PRODUCTS, DEMO_CATEGORIES } from '@/lib/demoData';
 import DataTable from '@/components/shared/DataTable';
 import SearchInput from '@/components/shared/SearchInput';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -80,33 +79,27 @@ export default function ProductsPage() {
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: ['products', page, limit, search, categoryFilter, statusFilter],
-    queryFn: () => apiFallback(
-      async () => {
-        const params = new URLSearchParams();
-        params.set('page', String(page));
-        params.set('limit', String(limit));
-        if (search) params.set('search', search);
-        if (categoryFilter) params.set('category', categoryFilter);
-        if (statusFilter) params.set('status', statusFilter);
-        const res = await api.get<IApiResponse<IProduct[]>>(`/products?${params}`);
-        if (res.data.meta) {
-          setTotal(res.data.meta.total);
-        }
-        return res.data.data || [];
-      },
-      DEMO_PRODUCTS
-    ),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      if (search) params.set('search', search);
+      if (categoryFilter) params.set('category', categoryFilter);
+      if (statusFilter) params.set('isActive', statusFilter === 'active' ? 'true' : 'false');
+      const res = await api.get<IApiResponse<IProduct[]>>(`/products?${params}`);
+      if (res.data.meta) {
+        setTotal(res.data.meta.total);
+      }
+      return res.data.data || [];
+    },
   });
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => apiFallback(
-      async () => {
-        const res = await api.get<IApiResponse<ICategory[]>>('/categories');
-        return res.data.data || [];
-      },
-      DEMO_CATEGORIES
-    ),
+    queryFn: async () => {
+      const res = await api.get<IApiResponse<ICategory[]>>('/categories');
+      return res.data.data || [];
+    },
   });
 
   const createMutation = useMutation({
@@ -218,7 +211,7 @@ export default function ProductsPage() {
       key: 'category',
       header: 'Category',
       render: (product: IProduct) =>
-        typeof product.category === 'object' ? product.category.name : 'N/A',
+        product.category && typeof product.category === 'object' ? product.category.name : 'N/A',
     },
     {
       key: 'price',

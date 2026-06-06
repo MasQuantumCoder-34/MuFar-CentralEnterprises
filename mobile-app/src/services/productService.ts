@@ -20,7 +20,7 @@ export const productService = {
     return response.data;
   },
 
-  async getProductById(id: number): Promise<Product> {
+  async getProductById(id: string): Promise<Product> {
     const response = await api.get<Product>(`/products/${id}`);
     return response.data;
   },

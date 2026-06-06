@@ -5,8 +5,8 @@ export interface IUser {
   storeName?: string;
   ownerName?: string;
   name?: string;
-  email: string;
-  mobile: string;
+  email?: string;
+  mobile?: string;
   alternateMobile?: string;
   password?: string;
   role: UserRole;
@@ -17,6 +17,8 @@ export interface IUser {
   country?: string;
   pincode?: string;
   profileImage?: string;
+  notes?: string;
+  totalOrders?: number;
   isActive: boolean;
   isLocked: boolean;
   mustChangePassword: boolean;
@@ -37,6 +39,7 @@ export interface ICategory {
   image?: string;
   isActive: boolean;
   sortOrder: number;
+  productCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,11 +72,7 @@ export interface IOrder {
   contactNumber: string;
   notes?: string;
   status: OrderStatus;
-  rejectionReason?: string;
-  holdReason?: string;
   expectedDeliveryDate?: string;
-  approvedAt?: string;
-  dispatchedAt?: string;
   deliveredAt?: string;
   cancelledAt?: string;
   cancellationReason?: string;
