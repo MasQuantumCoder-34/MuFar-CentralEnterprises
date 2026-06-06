@@ -32,6 +32,7 @@ export default function OrdersPage() {
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders', page, limit, search, statusFilter, sortOrder, clientFilter],
+    staleTime: 30 * 1000,
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('page', String(page));

@@ -92,6 +92,7 @@ export default function ProductsPage() {
       }
       return res.data.data || [];
     },
+    staleTime: 60 * 1000,
   });
 
   const { data: categories } = useQuery({
@@ -100,6 +101,7 @@ export default function ProductsPage() {
       const res = await api.get<IApiResponse<ICategory[]>>('/categories');
       return res.data.data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({

@@ -68,6 +68,7 @@ export default function ReportsPage() {
 
   const { data: salesData, isLoading: salesLoading } = useQuery<SalesReport[]>({
     queryKey: ['reports', 'sales', reportType],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const res = await api.get(`/reports/sales?type=${reportType}`);
       return (res.data?.data?.breakdown || []) as SalesReport[];
@@ -76,6 +77,7 @@ export default function ReportsPage() {
 
   const { data: topCustomers } = useQuery({
     queryKey: ['reports', 'top-customers'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const res = await api.get('/reports/customers');
       return (res.data?.data?.topCustomers || []) as TopCustomer[];
@@ -84,6 +86,7 @@ export default function ReportsPage() {
 
   const { data: lowStockData } = useQuery({
     queryKey: ['reports', 'low-stock'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const res = await api.get('/reports/inventory');
       return (res.data?.data?.lowStockProducts || []) as any[];

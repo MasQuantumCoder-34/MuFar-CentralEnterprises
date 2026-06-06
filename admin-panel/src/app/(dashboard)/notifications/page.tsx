@@ -29,6 +29,7 @@ export default function NotificationsPage() {
 
   const { data: notifications } = useQuery({
     queryKey: ['notifications', typeFilter],
+    staleTime: 30 * 1000,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (typeFilter) params.set('type', typeFilter);

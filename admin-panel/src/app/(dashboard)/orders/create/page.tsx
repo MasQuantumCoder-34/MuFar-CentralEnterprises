@@ -75,7 +75,8 @@ export default function CreateOrderPage() {
   const [createdOrder, setCreatedOrder] = useState<any>(null);
 
   const { data: clients } = useQuery({
-    queryKey: ['create-order-clients', clientSearch],
+    queryKey: ['clients'],
+    staleTime: 60 * 1000,
     queryFn: () => {
       const params = new URLSearchParams({ role: 'client', limit: '100' });
       if (clientSearch) params.set('search', clientSearch);
@@ -84,12 +85,14 @@ export default function CreateOrderPage() {
   });
 
   const { data: categories } = useQuery({
-    queryKey: ['create-order-categories'],
+    queryKey: ['categories'],
+    staleTime: 5 * 60 * 1000,
     queryFn: () => api.get<IApiResponse<ICategory[]>>('/categories').then(r => r.data.data || []),
   });
 
   const { data: products } = useQuery({
-    queryKey: ['create-order-products', selectedCategoryId],
+    queryKey: ['products', selectedCategoryId],
+    staleTime: 60 * 1000,
     queryFn: () => api.get<IApiResponse<IProduct[]>>(`/products?category=${selectedCategoryId}`).then(r => r.data.data || []),
     enabled: !!selectedCategoryId,
   });
@@ -142,9 +145,6 @@ export default function CreateOrderPage() {
       setCreatedOrder({ ...data, clientName: selectedClient?.storeName || selectedClient?.name });
       setShowSuccess(true);
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['modify-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['cancel-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-recent-orders'] });
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to create order'),
   });

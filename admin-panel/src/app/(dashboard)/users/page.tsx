@@ -64,6 +64,7 @@ export default function UsersPage() {
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['users', page, limit, search],
+    staleTime: 60 * 1000,
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('page', String(page));

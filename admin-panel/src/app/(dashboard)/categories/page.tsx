@@ -118,6 +118,7 @@ export default function CategoriesPage() {
       const res = await api.get<IApiResponse<ICategory[]>>('/categories');
       return res.data.data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({

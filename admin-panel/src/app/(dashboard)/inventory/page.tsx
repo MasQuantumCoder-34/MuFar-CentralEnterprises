@@ -63,7 +63,7 @@ export default function InventoryPage() {
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ['inventory', page, limit, search],
+    queryKey: ['products', 'inventory', page, limit, search],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('page', String(page));
@@ -73,6 +73,7 @@ export default function InventoryPage() {
       if (res.data.meta) setTotal(res.data.meta.total);
       return res.data.data || [];
     },
+    staleTime: 60 * 1000,
   });
 
   const { data: inventoryLogs } = useQuery({
@@ -81,6 +82,7 @@ export default function InventoryPage() {
       const res = await api.get<IApiResponse<IInventoryLog[]>>('/inventory/logs?limit=10');
       return res.data.data || [];
     },
+    staleTime: 30 * 1000,
   });
 
   const adjustMutation = useMutation({
@@ -88,9 +90,8 @@ export default function InventoryPage() {
       await api.post('/inventory/adjust', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['products', 'inventory'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-logs'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Stock adjusted');
       setDialogOpen(false);
       setSelectedProduct(null);

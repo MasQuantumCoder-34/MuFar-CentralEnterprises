@@ -70,6 +70,7 @@ export default function ClientsPage() {
 
   const { data: clients, isLoading } = useQuery({
     queryKey: ['clients', page, limit, search],
+    staleTime: 60 * 1000,
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('page', String(page));
