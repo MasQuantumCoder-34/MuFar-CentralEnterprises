@@ -135,25 +135,21 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
       });
     }
 
-    const tax = Math.round(subtotal * 0.18 * 100) / 100;
-    const totalAmount = subtotal + tax;
-
     const orderNumber = generateOrderNumber();
     const invoiceNumber = generateInvoiceNumber();
 
     const order = await Order.create({
       orderNumber,
       invoiceNumber,
-      client,
+      client: clientId,
       items: orderItems,
-      deliveryAddress: deliveryAddress || user.address || '',
-      contactNumber: contactNumber || user.mobile || '',
+      deliveryAddress,
+      contactNumber,
       notes,
       status: OrderStatus.PENDING,
       subtotal,
-      discount: 0,
-      tax,
-      total: totalAmount,
+      tax: 0,
+      total: subtotal,
       timeline: [
         {
           status: OrderStatus.PENDING,
@@ -440,11 +436,10 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
         }
       }
 
-      const tax = Math.round(subtotal * 0.18 * 100) / 100;
       order.items = orderItems as any;
       order.subtotal = subtotal;
-      order.tax = tax;
-      order.total = subtotal + tax;
+      order.tax = 0;
+      order.total = subtotal;
     }
 
     if (notes !== undefined) {
