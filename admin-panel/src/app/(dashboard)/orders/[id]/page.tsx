@@ -175,10 +175,6 @@ export default function OrderDetailPage() {
                   <span>-₹{order.discount.toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span>Tax</span>
-                <span>₹{order.tax.toLocaleString()}</span>
-              </div>
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
                 <span>₹{order.total.toLocaleString()}</span>
