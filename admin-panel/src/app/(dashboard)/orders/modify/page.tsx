@@ -45,6 +45,7 @@ interface EditableItem {
   quantity: number;
   stockQuantity: number;
   image?: string;
+  size?: string;
 }
 
 function getProductId(item: { product: string | IProduct }): string {
@@ -90,6 +91,7 @@ export default function ModifyOrdersPage() {
         quantity: item.quantity,
         stockQuantity: 9999,
         image: getProductImage(item),
+        size: item.size,
       }))
     );
     setEditedNotes(order.notes || '');
@@ -117,7 +119,7 @@ export default function ModifyOrdersPage() {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const items = localItems.map(item => ({ product: item.productId, quantity: item.quantity }));
+      const items = localItems.map(item => ({ product: item.productId, quantity: item.quantity, size: item.size }));
       await api.put(`/orders/${selectedOrderId}`, { items, notes: editedNotes });
     },
     onSuccess: () => {
@@ -213,7 +215,10 @@ export default function ModifyOrdersPage() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{item.productName}</p>
+                            <p className="font-medium text-sm truncate">
+                              {item.productName}
+                              {item.size && <span className="text-muted-foreground ml-1">({item.size})</span>}
+                            </p>
                             <p className="text-xs text-muted-foreground">₹{item.price.toLocaleString()} / unit</p>
                             <p className="text-xs text-muted-foreground">Line: ₹{lineTotal.toLocaleString()}</p>
                           </div>

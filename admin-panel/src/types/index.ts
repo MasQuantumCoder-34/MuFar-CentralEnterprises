@@ -1,6 +1,6 @@
 export { UserRole, OrderStatus, NotificationType, ActivityAction, InventoryAction } from './enums';
 export type {
-  IUser, ICategory, IProduct, IOrder, IOrderItem, ITimelineEntry,
+  IUser, ICategory, IProduct, IProductSize, IOrder, IOrderItem, ITimelineEntry,
   ICartItem, ICart, INotification, IInventoryLog, IActivityLog, ISettings,
   ILoginRequest, ILoginResponse, IApiResponse, IJwtPayload, IDashboardStats,
   IClientDashboard, IReportFilter,
@@ -16,20 +16,18 @@ export interface CreateOrderInput {
   deliveryAddress?: string;
   contactNumber?: string;
   notes?: string;
-  items: { product: string; quantity: number }[];
+  items: { product: string; quantity: number; size?: string }[];
 }
 
 export interface CreateProductInput {
   name: string;
-  sku: string;
   category: string;
-  brand?: string;
-  description?: string;
-  price: number;
-  offerPrice?: number;
+  mrp: number;
+  salesPrice: number;
   stockQuantity: number;
   lowStockThreshold?: number;
   images?: string[];
+  sizes?: { name: string; mrp: number; salesPrice: number }[];
 }
 
 export interface CreateUserInput {

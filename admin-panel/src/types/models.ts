@@ -44,14 +44,21 @@ export interface ICategory {
   updatedAt: string;
 }
 
+export interface IProductSize {
+  name: string;
+  mrp: number;
+  salesPrice: number;
+}
+
 export interface IProduct {
   _id: string;
   name: string;
   sku: string;
   category: string | ICategory;
   mrp: number;
+  salesPrice: number;
   images: string[];
-  sizes: string[];
+  sizes: IProductSize[];
   stockQuantity: number;
   lowStockThreshold: number;
   isActive: boolean;
@@ -90,6 +97,7 @@ export interface IOrderItem {
   quantity: number;
   price: number;
   total: number;
+  size?: string;
 }
 
 export interface ITimelineEntry {
@@ -107,6 +115,7 @@ export interface ICartItem {
   quantity: number;
   image?: string;
   stockQuantity: number;
+  size?: string;
 }
 
 export interface ICart {

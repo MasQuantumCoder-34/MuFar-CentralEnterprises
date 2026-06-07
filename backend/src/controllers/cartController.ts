@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import Cart from '../models/Cart';
 import Product from '../models/Product';
 import { AuthRequest } from '../middleware/auth';
+import { getSizePrice } from '../utils/helpers';
 
 const getCart = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -24,7 +25,7 @@ const getCart = async (req: AuthRequest, res: Response, next: NextFunction): Pro
 
 const addCartItem = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { product: productId, quantity = 1 } = req.body;
+    const { product: productId, quantity = 1, size } = req.body;
 
     const product = await Product.findById(productId);
     if (!product) {
@@ -55,8 +56,10 @@ const addCartItem = async (req: AuthRequest, res: Response, next: NextFunction):
       });
     }
 
+    const { salesPrice: itemPrice } = getSizePrice(product, size);
+
     const existingItemIndex = cart.items.findIndex(
-      (item) => (item.product as any).toString() === productId
+      (item) => (item.product as any).toString() === productId && (item as any).size === (size || undefined)
     );
 
     if (existingItemIndex > -1) {
@@ -69,11 +72,12 @@ const addCartItem = async (req: AuthRequest, res: Response, next: NextFunction):
         product: product._id as any,
         productName: product.name,
         sku: product.sku,
-        price: product.mrp,
+        price: itemPrice,
         quantity,
         image: product.images.length > 0 ? product.images[0] : undefined,
         stockQuantity: product.stockQuantity,
-      });
+        size: size || undefined,
+      } as any);
     }
 
     await cart.save();

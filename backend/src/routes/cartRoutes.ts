@@ -11,6 +11,7 @@ router.use(protect);
 const addCartSchema = z.object({
   product: z.string().min(1, 'Product ID is required'),
   quantity: z.number().int().positive().default(1),
+  size: z.string().optional(),
 });
 
 const updateCartSchema = z.object({

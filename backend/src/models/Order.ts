@@ -21,6 +21,7 @@ const orderItemSchema = new Schema<IOrderItem>(
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true },
     total: { type: Number, required: true },
+    size: { type: String },
   },
   { _id: false }
 );
