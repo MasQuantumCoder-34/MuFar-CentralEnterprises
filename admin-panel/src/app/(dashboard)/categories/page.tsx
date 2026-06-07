@@ -132,7 +132,15 @@ function CategoryRow({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{product.name}</p>
-                  <p className="text-xs text-muted-foreground">₹{product.mrp.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    <span>₹{(product.salesPrice ?? product.mrp).toLocaleString()}</span>
+                    <span className="line-through ml-1">₹{product.mrp.toLocaleString()}</span>
+                    {product.sizes?.length > 0 && (
+                      <span className="ml-1 text-[10px]">
+                        ({product.sizes.map((s: any) => s.name || s).join(', ')})
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <Badge variant={product.stockQuantity <= product.lowStockThreshold ? 'destructive' : 'secondary'}>
                   Stock: {product.stockQuantity}

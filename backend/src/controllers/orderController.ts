@@ -14,6 +14,7 @@ import {
 import { createNotification } from '../services/notificationService';
 import { generateInvoicePDF } from '../services/pdfService';
 import { generateOrderNumber, generateInvoiceNumber } from '../utils/generators';
+import { getSizePrice } from '../utils/helpers';
 import ActivityLog from '../models/ActivityLog';
 import Settings from '../models/Settings';
 
@@ -122,7 +123,8 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
         return;
       }
 
-      const total = product.mrp * item.quantity;
+      const { salesPrice: itemPrice } = getSizePrice(product, item.size);
+      const total = itemPrice * item.quantity;
       subtotal += total;
 
       orderItems.push({
@@ -130,8 +132,9 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
         productName: product.name,
         sku: product.sku,
         quantity: item.quantity,
-        price: product.mrp,
+        price: itemPrice,
         total,
+        size: item.size || undefined,
       });
     }
 
@@ -412,7 +415,8 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
           return;
         }
 
-        const total = product.mrp * item.quantity;
+        const { salesPrice: itemPrice } = getSizePrice(product, item.size);
+        const total = itemPrice * item.quantity;
         subtotal += total;
 
         orderItems.push({
@@ -420,8 +424,9 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
           productName: product.name,
           sku: product.sku,
           quantity: item.quantity,
-          price: product.mrp,
+          price: itemPrice,
           total,
+          size: item.size || undefined,
         });
       }
 

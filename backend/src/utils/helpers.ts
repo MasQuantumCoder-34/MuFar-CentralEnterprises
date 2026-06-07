@@ -22,4 +22,15 @@ const sanitizeUser = (user: any): Partial<IUser> => {
   return sanitized as Partial<IUser>;
 };
 
-export { formatCurrency, paginateQuery, sanitizeUser };
+const getSizePrice = (product: any, sizeName?: string) => {
+  const sizes = product.sizes || [];
+  if (sizeName && sizes.length > 0) {
+    const found = sizes.find((s: any) => s.name === sizeName);
+    if (found) {
+      return { mrp: found.mrp ?? product.mrp, salesPrice: found.salesPrice ?? found.mrp ?? product.salesPrice ?? product.mrp };
+    }
+  }
+  return { mrp: product.mrp, salesPrice: product.salesPrice ?? product.mrp };
+};
+
+export { formatCurrency, paginateQuery, sanitizeUser, getSizePrice };

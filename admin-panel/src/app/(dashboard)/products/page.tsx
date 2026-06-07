@@ -49,7 +49,12 @@ const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   category: z.string().min(1, 'Category is required'),
   mrp: z.coerce.number().positive('MRP must be positive'),
-  sizes: z.array(z.string()).default([]),
+  salesPrice: z.coerce.number().positive('Sales price must be positive'),
+  sizes: z.array(z.object({
+    name: z.string(),
+    mrp: z.coerce.number().positive(),
+    salesPrice: z.coerce.number().positive(),
+  })).default([]),
   stockQuantity: z.coerce.number().int().min(0),
   lowStockThreshold: z.coerce.number().int().min(0).default(10),
   images: z.array(z.string()).default([]),
@@ -158,11 +163,15 @@ export default function ProductsPage() {
 
   const openEdit = (product: IProduct) => {
     setEditingProduct(product);
+    const sizes = (product.sizes || []).map((s: any) =>
+      typeof s === 'string' ? { name: s, mrp: product.mrp, salesPrice: product.salesPrice } : s
+    );
     form.reset({
       name: product.name,
       category: typeof product.category === 'string' ? product.category : product.category._id,
       mrp: product.mrp,
-      sizes: product.sizes || [],
+      salesPrice: product.salesPrice,
+      sizes,
       stockQuantity: product.stockQuantity,
       lowStockThreshold: product.lowStockThreshold,
       images: product.images || [],
@@ -217,6 +226,12 @@ export default function ProductsPage() {
       header: 'MRP',
       sortable: true,
       render: (product: IProduct) => `₹${product.mrp.toLocaleString()}`,
+    },
+    {
+      key: 'salesPrice',
+      header: 'Sales Price',
+      sortable: true,
+      render: (product: IProduct) => `₹${(product.salesPrice ?? product.mrp).toLocaleString()}`,
     },
     {
       key: 'stockQuantity',
@@ -361,6 +376,13 @@ export default function ProductsPage() {
                 )}
               </div>
               <div className="space-y-2">
+                <Label>Sales Price (₹)</Label>
+                <Input type="number" step="0.01" {...form.register('salesPrice')} />
+                {form.formState.errors.salesPrice && (
+                  <p className="text-xs text-destructive">{form.formState.errors.salesPrice.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
                 <Label>Stock Quantity</Label>
                 <Input type="number" {...form.register('stockQuantity')} />
                 {form.formState.errors.stockQuantity && (
@@ -372,34 +394,73 @@ export default function ProductsPage() {
                 <Input type="number" {...form.register('lowStockThreshold')} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Sizes</Label>
+            <div className="space-y-3">
+              <Label>Sizes with Pricing</Label>
               <div className="flex flex-wrap gap-2">
-                {SIZES.map((size) => {
-                  const selected = (form.watch('sizes') || []).includes(size);
+                {SIZES.map((sizeName) => {
+                  const currentSizes = form.watch('sizes') || [];
+                  const existing = currentSizes.find((s: any) => s.name === sizeName);
                   return (
                     <button
-                      key={size}
+                      key={sizeName}
                       type="button"
                       onClick={() => {
                         const current = form.watch('sizes') || [];
-                        form.setValue(
-                          'sizes',
-                          selected ? current.filter((s) => s !== size) : [...current, size]
-                        );
+                        if (existing) {
+                          form.setValue('sizes', current.filter((s: any) => s.name !== sizeName));
+                        } else {
+                          form.setValue('sizes', [...current, { name: sizeName, mrp: form.watch('mrp'), salesPrice: form.watch('salesPrice') }]);
+                        }
                       }}
                       className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                        selected
+                        existing
                           ? 'border-primary bg-primary text-primary-foreground'
                           : 'border-input bg-background hover:bg-muted'
                       }`}
                     >
-                      {size}
-                      {selected && <X className="h-3 w-3" />}
+                      {sizeName}
+                      {existing && <X className="h-3 w-3" />}
                     </button>
                   );
                 })}
               </div>
+              {(form.watch('sizes') || []).length > 0 && (
+                <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+                  {(form.watch('sizes') || []).map((size: any, index: number) => (
+                    <div key={size.name} className="flex items-center gap-2">
+                      <span className="text-sm font-medium w-8">{size.name}</span>
+                      <div className="flex-1 grid grid-cols-2 gap-2">
+                        <div>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="MRP"
+                            value={size.mrp}
+                            onChange={(e) => {
+                              const updated = [...(form.watch('sizes') || [])];
+                              updated[index] = { ...updated[index], mrp: parseFloat(e.target.value) || 0 };
+                              form.setValue('sizes', updated);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="Sales"
+                            value={size.salesPrice}
+                            onChange={(e) => {
+                              const updated = [...(form.watch('sizes') || [])];
+                              updated[index] = { ...updated[index], salesPrice: parseFloat(e.target.value) || 0 };
+                              form.setValue('sizes', updated);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Images</Label>

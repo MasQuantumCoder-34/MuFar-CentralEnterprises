@@ -142,6 +142,7 @@ export default function OrderDetailPage() {
                 <TableRow>
                   <TableHead>Product</TableHead>
                   <TableHead>SKU</TableHead>
+                  <TableHead>Size</TableHead>
                   <TableHead>Qty</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -152,6 +153,7 @@ export default function OrderDetailPage() {
                   <TableRow key={i}>
                     <TableCell className="font-medium">{item.productName}</TableCell>
                     <TableCell>{item.sku}</TableCell>
+                    <TableCell>{item.size || '-'}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>₹{item.price.toLocaleString()}</TableCell>
                     <TableCell className="text-right">₹{item.total.toLocaleString()}</TableCell>

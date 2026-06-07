@@ -58,6 +58,19 @@ import type { IUser, ICategory, IProduct, IApiResponse } from '@/types';
 interface CartItem {
   product: IProduct;
   quantity: number;
+  size?: string;
+}
+
+function cartKey(productId: string, size?: string) {
+  return `${productId}::${size || ''}`;
+}
+
+function getSizePrice(product: IProduct, size?: string) {
+  if (size && product.sizes?.length) {
+    const found = product.sizes.find(s => s.name === size);
+    if (found) return { mrp: found.mrp ?? product.mrp, salesPrice: found.salesPrice ?? found.mrp ?? product.salesPrice ?? product.mrp };
+  }
+  return { mrp: product.mrp, salesPrice: product.salesPrice ?? product.mrp };
 }
 
 export default function CreateOrderPage() {
@@ -71,6 +84,7 @@ export default function CreateOrderPage() {
   const [selectedClientId, setSelectedClientId] = useState(preselectedClientId || '');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<any>(null);
 
@@ -100,44 +114,54 @@ export default function CreateOrderPage() {
   const selectedClient = clients?.find(c => c._id === selectedClientId);
   const selectedCategory = categories?.find(c => c._id === selectedCategoryId);
 
-  const addToCart = (product: IProduct) => {
+  const addToCart = (product: IProduct, size?: string) => {
+    if (product.sizes?.length && !size) {
+      toast.error('Please select a size');
+      return;
+    }
+    const key = cartKey(product._id, size);
     setCart(prev => {
-      const existing = prev.find(item => item.product._id === product._id);
+      const existing = prev.find(item => cartKey(item.product._id, item.size) === key);
       if (existing) {
         if (existing.quantity >= product.stockQuantity) {
           toast.error('Cannot add more than available stock');
           return prev;
         }
         return prev.map(item =>
-          item.product._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+          cartKey(item.product._id, item.size) === key
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: 1, size: size || undefined }];
     });
   };
 
-  const updateCartQty = (productId: string, qty: number) => {
+  const updateCartQty = (key: string, qty: number) => {
     setCart(prev =>
       prev.map(item =>
-        item.product._id === productId
+        cartKey(item.product._id, item.size) === key
           ? { ...item, quantity: Math.max(1, Math.min(qty, item.product.stockQuantity)) }
           : item
       )
     );
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product._id !== productId));
+  const removeFromCart = (key: string) => {
+    setCart(prev => prev.filter(item => cartKey(item.product._id, item.size) !== key));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.product.mrp * item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => {
+    const { salesPrice } = getSizePrice(item.product, item.size);
+    return sum + salesPrice * item.quantity;
+  }, 0);
   const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
       const res = await api.post('/orders', {
         clientId: selectedClientId,
-        items: cart.map(item => ({ product: item.product._id, quantity: item.quantity })),
+        items: cart.map(item => ({ product: item.product._id, quantity: item.quantity, size: item.size })),
       });
       return res.data.data;
     },
@@ -319,7 +343,9 @@ export default function CreateOrderPage() {
                   <p className="text-muted-foreground text-sm text-center py-4">No products in this category</p>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {products.map((product) => (
+                    {products.map((product) => {
+                      const selSize = selectedSizes[product._id] || '';
+                      return (
                       <Card key={product._id} className="overflow-hidden">
                         <div className="h-32 bg-muted flex items-center justify-center overflow-hidden">
                           {product.images?.[0] ? (
@@ -331,22 +357,47 @@ export default function CreateOrderPage() {
                         <CardContent className="p-3 space-y-2">
                           <p className="font-medium text-sm line-clamp-1">{product.name}</p>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-primary font-semibold">₹{product.mrp.toLocaleString()}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-primary font-semibold">₹{getSizePrice(product, selSize || undefined).salesPrice.toLocaleString()}</span>
+                              <span className="text-xs line-through text-muted-foreground">₹{getSizePrice(product, selSize || undefined).mrp.toLocaleString()}</span>
+                            </div>
                             <span className={product.stockQuantity <= 5 ? 'text-destructive text-xs' : 'text-muted-foreground text-xs'}>
                               Stock: {product.stockQuantity}
                             </span>
                           </div>
+                          {product.sizes?.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {product.sizes.map((s: any) => {
+                                const sName = typeof s === 'string' ? s : s.name;
+                                return (
+                                <button
+                                  key={sName}
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedSizes(prev => ({ ...prev, [product._id]: prev[product._id] === sName ? '' : sName }))
+                                  }
+                                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                                    selSize === sName
+                                      ? 'border-primary bg-primary text-primary-foreground'
+                                      : 'border-input bg-background hover:bg-muted'
+                                  }`}
+                                >
+                                  {sName}
+                                </button>
+                              )})}
+                            </div>
+                          )}
                           <Button
                             size="sm"
                             className="w-full"
-                            onClick={() => addToCart(product)}
-                            disabled={product.stockQuantity <= 0}
+                            onClick={() => addToCart(product, selSize || undefined)}
+                            disabled={product.stockQuantity <= 0 || (product.sizes?.length > 0 && !selSize)}
                           >
-                            {product.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Order'}
+                            {product.stockQuantity <= 0 ? 'Out of Stock' : product.sizes?.length > 0 && !selSize ? 'Select Size' : 'Add to Order'}
                           </Button>
                         </CardContent>
                       </Card>
-                    ))}
+                    )})}
                   </div>
                 )}
                 <div className="flex gap-2 mt-4">
@@ -372,18 +423,23 @@ export default function CreateOrderPage() {
                 ) : (
                   <>
                     <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {cart.map((item) => (
-                        <div key={item.product._id} className="flex items-center justify-between gap-2 p-2 bg-muted rounded-lg text-sm">
+                      {cart.map((item) => {
+                        const key = cartKey(item.product._id, item.size);
+                        return (
+                        <div key={key} className="flex items-center justify-between gap-2 p-2 bg-muted rounded-lg text-sm">
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{item.product.name}</p>
-                            <p className="text-xs text-muted-foreground">₹{item.product.mrp.toLocaleString()} × {item.quantity}</p>
+                            <p className="font-medium truncate">
+                              {item.product.name}
+                              {item.size && <span className="text-muted-foreground ml-1">({item.size})</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground">₹{getSizePrice(item.product, item.size).salesPrice.toLocaleString()} × {item.quantity}</p>
                           </div>
                           <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              onClick={() => updateCartQty(item.product._id, item.quantity - 1)}
+                              onClick={() => updateCartQty(key, item.quantity - 1)}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
@@ -392,7 +448,7 @@ export default function CreateOrderPage() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              onClick={() => updateCartQty(item.product._id, item.quantity + 1)}
+                              onClick={() => updateCartQty(key, item.quantity + 1)}
                               disabled={item.quantity >= item.product.stockQuantity}
                             >
                               <Plus className="h-3 w-3" />
@@ -401,13 +457,13 @@ export default function CreateOrderPage() {
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 text-destructive"
-                              onClick={() => removeFromCart(item.product._id)}
+                              onClick={() => removeFromCart(key)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                     <div className="border-t pt-3 space-y-1 text-sm">
                       <div className="flex justify-between">

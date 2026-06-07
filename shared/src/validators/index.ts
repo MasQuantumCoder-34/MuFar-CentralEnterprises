@@ -47,7 +47,12 @@ export const createProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   category: z.string().min(1, 'Category is required'),
   mrp: z.number().positive('MRP must be positive'),
-  sizes: z.array(z.string()).default([]),
+  salesPrice: z.number().positive('Sales price must be positive'),
+  sizes: z.array(z.object({
+    name: z.string().min(1, 'Size name is required'),
+    mrp: z.number().positive('Size MRP must be positive'),
+    salesPrice: z.number().positive('Size sales price must be positive'),
+  })).default([]),
   stockQuantity: z.number().int().min(0, 'Stock must be 0 or more'),
   lowStockThreshold: z.number().int().min(0).default(10),
   images: z.array(z.string()).default([]),
@@ -73,6 +78,7 @@ export const createOrderSchema = z.object({
   items: z.array(z.object({
     product: z.string().min(1),
     quantity: z.number().int().positive('Quantity must be positive'),
+    size: z.string().optional(),
   })).min(1, 'At least one item is required'),
 });
 
@@ -85,6 +91,7 @@ export const updateOrderSchema = z.object({
   items: z.array(z.object({
     product: z.string().min(1),
     quantity: z.number().int().positive('Quantity must be positive'),
+    size: z.string().optional(),
   })).optional(),
   notes: z.string().optional(),
 });
