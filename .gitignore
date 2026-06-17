@@ -11,3 +11,6 @@ dist/
 coverage/
 .turbo/
 *.tgz
+
+# Mobile app APK (hosted separately, too large for git)
+*.apk

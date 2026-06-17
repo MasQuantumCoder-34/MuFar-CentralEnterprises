@@ -18,6 +18,7 @@ import {
 import { toast } from 'sonner';
 import type { ISettings, IApiResponse } from '@/types';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import { Smartphone, Download } from 'lucide-react';
 
 const settingsSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -143,6 +144,36 @@ export default function SettingsPage() {
               {updateMutation.isPending ? 'Saving...' : 'Save Settings'}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Smartphone className="h-5 w-5" />
+            Mobile App
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Download the Mufar Central Enterprises mobile app for Android.
+            Manage orders, browse products, and stay connected on the go.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button asChild variant="default" className="w-full sm:w-auto">
+              <a
+                href="https://github.com/MasQuantumCoder-34/MuFar-CentralEnterprises/releases/download/v1.0.0/app-release.apk"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download APK (v1.0.0)
+              </a>
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              APK size: ~52MB · Android 8.0+ required
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

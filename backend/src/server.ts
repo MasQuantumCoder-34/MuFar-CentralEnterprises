@@ -50,6 +50,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compression());
+app.use(express.static('public'));
 app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 
 app.get('/api/health', (_req, res) => {

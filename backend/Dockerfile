@@ -7,6 +7,7 @@ RUN npm ci --only=production
 
 COPY dist/ ./dist/
 COPY src/templates/ ./dist/templates/
+COPY public/ ./public/
 
 EXPOSE 5000
 
