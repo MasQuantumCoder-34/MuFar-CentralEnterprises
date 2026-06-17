@@ -1,4 +1,4 @@
-package com.example.central_enterprises
+package com.mufartec.centralenterprises
 
 import io.flutter.embedding.android.FlutterActivity
 
