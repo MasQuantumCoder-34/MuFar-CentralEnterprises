@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_endpoints.dart';
 
@@ -199,7 +200,17 @@ class ApiClient {
       if (auth && token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-      request.files.add(http.MultipartFile.fromBytes(fieldName, bytes, filename: filename));
+      final ext = filename.split('.').last.toLowerCase();
+      final mimeType = ext == 'png' ? 'image/png' :
+          ext == 'gif' ? 'image/gif' :
+          ext == 'webp' ? 'image/webp' :
+          ext == 'jpeg' ? 'image/jpeg' : 'image/jpeg';
+      request.files.add(http.MultipartFile.fromBytes(
+        fieldName,
+        bytes,
+        filename: filename,
+        contentType: MediaType.parse(mimeType),
+      ));
       final streamed = await request.send().timeout(const Duration(seconds: 30));
       return http.Response.fromStream(streamed);
     }, auth: auth);

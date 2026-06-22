@@ -13,8 +13,8 @@ import '../orders/orders_screen.dart';
 import '../orders/order_detail_screen.dart';
 import '../orders/create_order_screen.dart';
 import '../orders/modify_order_screen.dart';
-import '../orders/cancel_order_screen.dart';
 import '../clients/clients_screen.dart';
+import '../inventory/inventory_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final void Function(int index)? onTabChange;
@@ -109,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: order.id))),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                               child: Row(children: [
                                 Expanded(flex: 2, child: Text(order.clientName ?? order.orderNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
                                 Expanded(flex: 2, child: Text(order.clientName != null ? order.orderNumber : '', style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
@@ -172,7 +172,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _actionCard(Icons.add_circle_outline, 'Create Order', const Color(0xFF10B981), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateOrderScreen()))),
         _actionCard(Icons.receipt_long_outlined, 'View Orders', const Color(0xFF00BFFF), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()))),
         _actionCard(Icons.edit_outlined, 'Modify Orders', const Color(0xFFF59E0B), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ModifyOrderScreen()))),
-        _actionCard(Icons.cancel_outlined, 'Cancel Orders', const Color(0xFFDC2626), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CancelOrderScreen()))),
+        _actionCard(Icons.inventory_2_outlined, 'Inventory', const Color(0xFF8B5CF6), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryScreen()))),
       ],
     );
   }
