@@ -8,7 +8,7 @@ export const loginSchema = z.object({
 
 export const createUserSchema = z.object({
   storeName: z.string().min(1, 'Store name is required'),
-  ownerName: z.string().min(1, 'Owner name is required'),
+  ownerName: z.string().optional(),
   mobile: z.string().optional().or(z.literal('')),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   role: z.nativeEnum(UserRole),

@@ -13,14 +13,13 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: fontSize > 11 ? 4 : 3),
       decoration: BoxDecoration(
-        color: config.color.withOpacity(0.1),
+        color: config.color,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: config.color.withOpacity(0.25)),
       ),
       child: Text(
         config.label,
         style: TextStyle(
-          color: config.color,
+          color: Colors.white,
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.3,

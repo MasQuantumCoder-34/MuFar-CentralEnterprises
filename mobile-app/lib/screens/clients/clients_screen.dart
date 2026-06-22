@@ -5,6 +5,7 @@ import '../../services/api_client.dart';
 import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/app_dialog.dart';
 import '../orders/create_order_screen.dart';
 import 'add_client_screen.dart';
 
@@ -59,20 +60,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
   }
 
   Future<void> _deleteClient(User client) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Client'),
-        content: Text('Delete "${client.storeName ?? client.name}"? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: 'Delete Client',
+      content: Text('Delete "${client.storeName ?? client.name}"? This cannot be undone.'),
+      confirmLabel: 'Delete',
+      confirmColor: AppTheme.error,
     );
     if (confirmed != true) return;
     try {

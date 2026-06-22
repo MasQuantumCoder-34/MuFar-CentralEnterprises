@@ -7,6 +7,7 @@ import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/app_network_image.dart';
+import '../../widgets/app_dialog.dart';
 import 'add_product_screen.dart';
 import 'product_detail_screen.dart';
 
@@ -34,7 +35,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
-      final params = <String, String>{'limit': '100'};
+      final params = <String, String>{'limit': '100', 'isActive': 'true'};
       if (_search.isNotEmpty) params['search'] = _search;
       final results = await Future.wait([
         _api.get(ApiEndpoints.categories),
@@ -67,26 +68,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Future<void> _editProduct(Product product) async {
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => AddProductScreen(product: product)),
+      MaterialPageRoute(builder: (_) => AddProductScreen(product: product, initialCategories: _categories)),
     );
     if (result == true) _loadData();
   }
 
   Future<void> _deleteProduct(Product product) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Product'),
-        content: Text('Delete "${product.name}"? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: 'Delete Product',
+      content: Text('Delete "${product.name}"? This cannot be undone.'),
+      confirmLabel: 'Delete',
+      confirmColor: AppTheme.error,
     );
     if (confirmed != true) return;
     try {
@@ -108,7 +101,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             icon: const Icon(Icons.add_circle_outline),
             tooltip: 'Add Product',
             onPressed: () async {
-              final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddProductScreen()));
+              final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => AddProductScreen(initialCategories: _categories)));
               if (result == true) _loadData();
             },
           ),

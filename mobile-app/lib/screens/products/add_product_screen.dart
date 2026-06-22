@@ -36,7 +36,8 @@ class _SizeEntry {
 
 class AddProductScreen extends StatefulWidget {
   final Product? product;
-  const AddProductScreen({super.key, this.product});
+  final List<Category>? initialCategories;
+  const AddProductScreen({super.key, this.product, this.initialCategories});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -66,7 +67,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    if (widget.initialCategories != null) {
+      _categories = widget.initialCategories!;
+      _loadingCategories = false;
+      if (_isEditing && widget.product!.categoryId != null) {
+        final match = _categories.indexWhere((c) => c.id == widget.product!.categoryId);
+        if (match >= 0) _selectedCategoryId = _categories[match].id;
+      }
+    } else {
+      _loadCategories();
+    }
     if (_isEditing) {
       final p = widget.product!;
       _nameCtrl.text = p.name;
@@ -295,7 +305,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildField('Product Name', _nameCtrl, required: true),
-              _buildField('Piece (optional)', _skuCtrl),
+              _buildField('Piece Code (optional)', _skuCtrl, hint: 'Whatever you type here will be saved'),
               if (_loadingCategories)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 12),
@@ -524,13 +534,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Widget _buildField(String label, TextEditingController ctrl,
       {bool required = false,
-      TextInputType keyboardType = TextInputType.text}) {
+      TextInputType keyboardType = TextInputType.text,
+      String? hint}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: ctrl,
         keyboardType: keyboardType,
-        decoration: _inputDecoration(required ? '$label *' : label),
+        decoration: _inputDecoration(required ? '$label *' : label).copyWith(
+          hintText: hint,
+        ),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
             : null,

@@ -18,6 +18,7 @@ import 'analytics/order_analytics_screen.dart';
 import 'profile/profile_screen.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_dialog.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -109,23 +110,16 @@ class _MainShellState extends State<MainShell> {
           _drawerItem(Icons.logout_rounded, 'Logout',
             onTap: () {
               Navigator.pop(context);
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Logout'),
-                  content: const Text('Are you sure you want to logout?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        context.read<AuthProvider>().logout();
-                      },
-                      child: const Text('Logout', style: TextStyle(color: AppTheme.error)),
-                    ),
-                  ],
-                ),
-              );
+              AppDialog.showConfirm(
+                context,
+                title: 'Logout',
+                content: const Text('Are you sure you want to logout?'),
+                cancelLabel: 'Cancel',
+                confirmLabel: 'Logout',
+                confirmColor: AppTheme.error,
+              ).then((confirmed) {
+                if (confirmed == true) context.read<AuthProvider>().logout();
+              });
             },
           ),
         ],

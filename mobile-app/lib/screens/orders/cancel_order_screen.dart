@@ -50,7 +50,7 @@ class _CancelOrderScreenState extends State<CancelOrderScreen> {
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Are you sure you want to cancel ${order.orderNumber}?', style: const TextStyle(fontSize: 13)),
           const SizedBox(height: 4),
-          Text('Stock will be restored automatically.', style: TextStyle(fontSize: 11, color: AppTheme.error.withOpacity(0.8))),
+          Text('Stock will be restored automatically.', style: TextStyle(fontSize: 11, color: AppTheme.textTertiary)),
           const SizedBox(height: 12),
           TextField(
             controller: reasonCtrl, maxLines: 2,
@@ -59,15 +59,35 @@ class _CancelOrderScreenState extends State<CancelOrderScreen> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
             ),
           ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep Order')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Cancel Order'),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.error,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Keep Order', style: TextStyle(color: Colors.white)),
+            ),
           ),
-        ],
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.error,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Cancel Order'),
+            ),
+          ),
+        ]),
       ),
     );
 
