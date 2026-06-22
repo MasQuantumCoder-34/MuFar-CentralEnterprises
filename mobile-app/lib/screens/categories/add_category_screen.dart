@@ -27,6 +27,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   bool _uploadingImage = false;
 
   bool _loading = false;
+  bool _uploadError = false;
   bool get _isEditing => widget.category != null;
 
   @override
@@ -102,14 +103,21 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1024);
     if (picked != null) {
-      setState(() => _imagePath = picked.path);
+      setState(() {
+        _imagePath = picked.path;
+        _imageUrl = null;
+        _uploadError = false;
+      });
       _uploadImage();
     }
   }
 
   Future<void> _uploadImage() async {
     if (_imagePath == null) return;
-    setState(() => _uploadingImage = true);
+    setState(() {
+      _uploadingImage = true;
+      _uploadError = false;
+    });
     try {
       final res = await _api.uploadFiles(ApiEndpoints.upload, [
         MapEntry('images', _imagePath!),
@@ -119,11 +127,26 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
         final data = body['data'] as Map<String, dynamic>;
         final urls = (data['urls'] as List).cast<String>();
         if (urls.isNotEmpty) {
-          setState(() => _imageUrl = urls.first);
+          if (mounted) setState(() => _imageUrl = urls.first);
+        } else {
+          if (mounted) setState(() => _uploadError = true);
         }
+      } else {
+        if (mounted) setState(() => _uploadError = true);
       }
-    } catch (_) {}
-    setState(() => _uploadingImage = false);
+    } catch (_) {
+      if (mounted) setState(() => _uploadError = true);
+    }
+    if (mounted) setState(() => _uploadingImage = false);
+    if (_uploadError && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image upload failed. Try a different image or check connection.'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -163,6 +186,25 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                   child: const Center(
                                     child: CircularProgressIndicator(color: Colors.white),
                                   ),
+                                )
+                              else if (_uploadError)
+                                Container(
+                                  color: Colors.black38,
+                                  child: const Center(
+                                    child: Icon(Icons.error_outline, color: Colors.red, size: 40),
+                                  ),
+                                )
+                              else if (_imageUrl != null)
+                                Positioned(
+                                  top: 6, right: 6,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.check, color: Colors.white, size: 18),
+                                  ),
                                 ),
                             ],
                           ),
@@ -187,7 +229,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : _submit,
+                  onPressed: (_loading || _uploadingImage) ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                   ),
