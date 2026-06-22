@@ -6,21 +6,16 @@ class ApiEndpoints {
   static const String me = '/auth/me';
 
   static const String products = '/products';
-  static String product(String id) => '/products/$id';
 
   static const String categories = '/categories';
-  static String category(String id) => '/categories/$id';
 
   static const String users = '/users';
-  static String user(String id) => '/users/$id';
 
   static const String orders = '/orders';
   static String order(String id) => '/orders/$id';
   static String orderStatus(String id) => '/orders/$id/status';
 
-  static const String dashboard = '/dashboard/client';
-  static const String adminDashboard = '/dashboard/admin';
+  static const String upload = '/upload';
 
   static const String notifications = '/notifications';
-  static String notification(String id) => '/notifications/$id';
 }

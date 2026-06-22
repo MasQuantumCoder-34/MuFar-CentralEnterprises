@@ -6,8 +6,9 @@ import '../../services/api_client.dart';
 import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
-import '../../widgets/product_card.dart';
+import '../../widgets/app_network_image.dart';
 import 'add_product_screen.dart';
+import 'product_detail_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -63,11 +64,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return result;
   }
 
-  Future<void> _toggleActive(Product product) async {
-    try {
-      await _api.put('/products/${product.id}', body: {'isActive': !product.isActive});
-      _loadData();
-    } catch (_) {}
+  Future<void> _editProduct(Product product) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AddProductScreen(product: product)),
+    );
+    if (result == true) _loadData();
   }
 
   Future<void> _deleteProduct(Product product) async {
@@ -165,44 +167,89 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       ? const Center(child: Text('No products found'))
                       : RefreshIndicator(
                           onRefresh: _loadData,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(12, 4, 12, 60),
+                          child: GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.68,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                            ),
                             itemCount: _filteredProducts.length,
                             itemBuilder: (_, i) {
                               final p = _filteredProducts[i];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 6),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Row(children: [
-                                    Container(
-                                      width: 44, height: 44,
-                                      decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
-                                      child: p.images.isNotEmpty
-                                          ? ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(p.images.first, fit: BoxFit.cover, width: 44, height: 44, errorBuilder: (_, __, ___) => const Icon(Icons.inventory_2_outlined, color: AppTheme.primary, size: 22)))
-                                          : const Icon(Icons.inventory_2_outlined, color: AppTheme.primary, size: 22),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                        Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                        Text('SKU: ${p.sku.isNotEmpty ? p.sku : 'N/A'} · ${p.stockQuantity} in stock',
-                                            style: TextStyle(fontSize: 10, color: p.stockQuantity <= p.lowStockThreshold ? AppTheme.error : AppTheme.textSecondary)),
-                                        Text('₹${p.salesPrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primary)),
-                                      ]),
-                                    ),
-                                    PopupMenuButton<String>(
-                                      icon: const Icon(Icons.more_vert, size: 18),
-                                      onSelected: (v) {
-                                        if (v == 'toggle') _toggleActive(p);
-                                        if (v == 'delete') _deleteProduct(p);
-                                      },
-                                      itemBuilder: (_) => [
-                                        const PopupMenuItem(value: 'toggle', child: Row(children: [Icon(Icons.visibility_outlined, size: 16), SizedBox(width: 8), Text('Toggle Active')])),
-                                        const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppTheme.error), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppTheme.error))])),
-                                      ],
-                                    ),
-                                  ]),
+                              return GestureDetector(
+                                onTap: () async {
+                                  final r = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => ProductDetailScreen(product: p)),
+                                  );
+                                  if (r == true) _loadData();
+                                },
+                                child: Card(
+                                  clipBehavior: Clip.antiAlias,
+                                  elevation: 1,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            AppNetworkImage(
+                                              imageUrl: p.images.isNotEmpty ? p.images.first : null,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              borderRadius: 0,
+                                            ),
+                                            Positioned(
+                                              top: 4, right: 4,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black38,
+                                                  borderRadius: BorderRadius.circular(20),
+                                                ),
+                                                child: PopupMenuButton<String>(
+                                                  icon: const Icon(Icons.more_vert, size: 20, color: Colors.white),
+                                                  onSelected: (v) {
+                                                    if (v == 'edit') _editProduct(p);
+                                                    if (v == 'delete') _deleteProduct(p);
+                                                  },
+                                                  itemBuilder: (_) => [
+                                                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit')])),
+                                                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppTheme.error), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppTheme.error))])),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                            const SizedBox(height: 2),
+                                            Text('\u20B9${p.sizes.isNotEmpty ? p.sizes.first.salesPrice.toStringAsFixed(0) : '0'}',
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primary)),
+                                            if (p.sizes.isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 2),
+                                                child: Text(
+                                                  p.stockDisplay(),
+                                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(fontSize: 10, color: p.totalStock <= 0 ? AppTheme.error : AppTheme.textSecondary),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },

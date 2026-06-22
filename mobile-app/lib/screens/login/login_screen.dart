@@ -32,44 +32,50 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
+      body: Column(
+        children: [
+          Container(
+            height: MediaQuery.of(context).size.height * 0.50,
+            width: double.infinity,
+            color: Colors.white,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/login-page.jpeg',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
             child: Form(
               key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/central_enterprises_logo.jpeg',
-                      height: 130,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Mufar Central\nEnterprises',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'B2B Order Management Platform',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 44),
+                  const Text('Welcome',
+                      style: TextStyle(
+                          fontSize: 26, fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary)),
+                  const SizedBox(height: 4),
+                  Text('Sign in to your account',
+                      style: TextStyle(
+                          fontSize: 14, color: AppTheme.textSecondary)),
+                  const SizedBox(height: 24),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email Address',
-                      prefixIcon: Icon(Icons.email_outlined, size: 20),
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                      filled: true,
+                      fillColor: AppTheme.surfaceVariant,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Enter your email';
@@ -90,6 +96,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
+                      filled: true,
+                      fillColor: AppTheme.surfaceVariant,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Enter your password';
@@ -99,54 +111,69 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   Consumer<AuthProvider>(
                     builder: (context, auth, _) {
-                      if (auth.error != null) {
-                        return Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppTheme.error.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.error_outline, color: AppTheme.error, size: 18),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  auth.error!,
-                                  style: const TextStyle(color: AppTheme.error, fontSize: 13),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      return const SizedBox.shrink();
+                      if (auth.error == null) return const SizedBox.shrink();
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.error.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: AppTheme.error, size: 17),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(auth.error!,
+                                  style: const TextStyle(
+                                      color: AppTheme.error, fontSize: 13)),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 20),
                   Consumer<AuthProvider>(
                     builder: (context, auth, _) {
-                      return ElevatedButton(
-                        onPressed: auth.status == AuthStatus.loading ? null : _handleLogin,
-                        child: auth.status == AuthStatus.loading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('Sign In'),
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: auth.status == AuthStatus.loading ? null : _handleLogin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: AppTheme.primary.withOpacity(0.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 0,
+                            textStyle: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w700),
+                          ),
+                          child: auth.status == AuthStatus.loading
+                              ? const SizedBox(
+                                  height: 22, width: 22,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2.5, color: Colors.white),
+                                )
+                              : const Text('Sign In'),
+                        ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Text('Central Enterprises \u2022 v1.0.0',
+                        style: TextStyle(
+                            fontSize: 11, color: AppTheme.textTertiary)),
                   ),
                 ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

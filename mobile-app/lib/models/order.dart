@@ -21,7 +21,7 @@ class OrderItem {
     final product = json['product'];
     String? productId;
     if (product is Map<String, dynamic>) {
-      productId = product['_id'] as String?;
+      productId = (product['_id'] ?? product['id']) as String?;
     } else if (product is String) {
       productId = product;
     }
@@ -145,11 +145,3 @@ class Order {
     );
   }
 }
-
-const orderStatusFlow = {
-  'pending': ['processing', 'cancelled'],
-  'processing': ['out_for_delivery', 'delivered', 'cancelled'],
-  'out_for_delivery': ['delivered'],
-  'delivered': <String>[],
-  'cancelled': <String>[],
-};

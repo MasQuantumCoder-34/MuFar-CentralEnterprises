@@ -5,7 +5,7 @@ export interface ISettingsDocument extends Omit<ISettings, '_id' | 'createdAt' |
 
 const settingsSchema = new Schema<ISettingsDocument>(
   {
-    companyName: { type: String, required: true, default: 'Mufar Commerce' },
+    companyName: { type: String, required: true, default: 'Central Enterprises' },
     logo: { type: String },
     contactNumber: { type: String, required: true, default: '' },
     email: { type: String, required: true, default: '' },
@@ -31,7 +31,7 @@ export const getSettings = async (): Promise<ISettingsDocument> => {
   let settings = await Settings.findOne();
   if (!settings) {
     settings = await Settings.create({
-      companyName: 'Mufar Commerce',
+      companyName: 'Central Enterprises',
       contactNumber: '',
       email: '',
       address: '',

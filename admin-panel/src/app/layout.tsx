@@ -9,8 +9,8 @@ import { Toaster } from '@/components/ui/toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Mufar Commerce - Admin Panel',
-  description: 'Admin panel for Mufar Commerce',
+  title: 'Central Enterprises - Admin Panel',
+  description: 'Admin panel for Central Enterprises',
 };
 
 export default function RootLayout({

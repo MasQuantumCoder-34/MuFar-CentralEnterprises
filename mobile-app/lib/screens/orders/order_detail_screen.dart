@@ -8,6 +8,14 @@ import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/status_badge.dart';
 
+const _statusFlow = {
+  'pending': ['delivered', 'cancelled'],
+  'processing': ['delivered', 'cancelled'],
+  'out_for_delivery': ['delivered'],
+  'delivered': <String>[],
+  'cancelled': <String>[],
+};
+
 class OrderDetailScreen extends StatefulWidget {
   final String orderId;
   const OrderDetailScreen({super.key, required this.orderId});
@@ -99,7 +107,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   : RefreshIndicator(
                       onRefresh: _loadOrder,
                       child: ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
                         children: [
                           _buildHeader(),
                           const SizedBox(height: 20),
@@ -112,6 +120,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           ..._order!.items.map((item) => _buildItemCard(item)),
                           const SizedBox(height: 16),
                           _buildSummary(),
+                          const SizedBox(height: 20),
+                          _buildStatusActions(),
                           const SizedBox(height: 20),
                           _buildSectionTitle('Timeline'),
                           const SizedBox(height: 8),
@@ -131,7 +141,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               ),
                             )
                           else
-                            ..._order!.timeline.map((e) => _buildTimelineEntry(e)),
+                            ..._order!.timeline.asMap().entries.map((entry) {
+                              final i = entry.key;
+                              final e = entry.value;
+                              return _buildTimelineEntry(e, isLast: i == _order!.timeline.length - 1);
+                            }),
                         ],
                       ),
                     ),
@@ -154,7 +168,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             children: [
               Expanded(
                 child: Text(
-                  _order!.orderNumber,
+                  _order!.clientName ?? _order!.orderNumber,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -167,6 +181,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ],
           ),
           const SizedBox(height: 4),
+          Text(
+            _order!.orderNumber,
+            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13),
+          ),
           if (_order!.invoiceNumber.isNotEmpty)
             Text(
               'Invoice: ${_order!.invoiceNumber}',
@@ -246,9 +264,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         const SizedBox(width: 6),
                       ],
                       if (item.sku.isNotEmpty)
-                        Text('SKU: ${item.sku}',
-                            style: const TextStyle(
-                                color: AppTheme.textTertiary, fontSize: 11)),
+                        Flexible(
+                          child: Text('SKU: ${item.sku}',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: AppTheme.textTertiary, fontSize: 11)),
+                        ),
                     ],
                   ),
                 ],
@@ -298,14 +319,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: TextStyle(
-                color: bold ? AppTheme.textPrimary : AppTheme.textSecondary,
-                fontWeight: bold ? FontWeight.w600 : null,
-                fontSize: bold ? 15 : 13,
-              )),
+          Flexible(
+            child: Text(label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: bold ? AppTheme.textPrimary : AppTheme.textSecondary,
+                  fontWeight: bold ? FontWeight.w600 : null,
+                  fontSize: bold ? 15 : 13,
+                )),
+          ),
+          const SizedBox(width: 12),
           Text(
             '₹${amount.toStringAsFixed(0)}',
             style: TextStyle(
@@ -319,7 +343,135 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildTimelineEntry(TimelineEntry entry) {
+  Widget _buildStatusActions() {
+    final nextStatuses = _statusFlow[_order!.status] ?? [];
+    if (nextStatuses.isEmpty) return const SizedBox();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.loop, size: 18, color: AppTheme.primary),
+                const SizedBox(width: 6),
+                const Text('Update Status',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppTheme.textPrimary)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              children: nextStatuses.map((s) {
+                final labels = {
+                  'delivered': 'Delivered',
+                  'cancelled': 'Cancel',
+                };
+                return ElevatedButton.icon(
+                  onPressed: () => _showStatusDialog(s, labels[s] ?? s),
+                  icon: Icon(
+                    s == 'cancelled' ? Icons.cancel_outlined : Icons.arrow_forward,
+                    size: 16,
+                  ),
+                  label: Text(labels[s] ?? s, style: const TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: s == 'cancelled' ? AppTheme.error : AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showStatusDialog(String newStatus, String label) async {
+    final notesCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(label),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Update ${_order!.orderNumber} to $label?',
+              style: const TextStyle(fontSize: 13)),
+          const SizedBox(height: 4),
+          Text('Current: ${_order!.status.replaceAll('_', ' ')}',
+              style: TextStyle(fontSize: 11, color: AppTheme.textTertiary)),
+          if (newStatus == 'cancelled') ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesCtrl, maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'Cancellation reason (required)',
+                filled: true, fillColor: AppTheme.surfaceVariant,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: newStatus == 'cancelled' ? AppTheme.error : AppTheme.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              if (newStatus == 'cancelled' && notesCtrl.text.trim().isEmpty) return;
+              Navigator.pop(ctx, true);
+            },
+            child: Text(label),
+          ),
+        ],
+      ),
+    );
+
+    notesCtrl.dispose();
+    if (confirmed != true) return;
+    await _updateStatus(newStatus, notesCtrl.text.trim());
+  }
+
+  Future<void> _updateStatus(String status, String notes) async {
+    try {
+      final body = <String, dynamic>{'status': status};
+      if (notes.isNotEmpty) body['notes'] = notes;
+      final res = await _api.put(ApiEndpoints.orderStatus(widget.orderId), body: body);
+      final resp = jsonDecode(res.body) as Map<String, dynamic>;
+      if (resp['success'] == true) {
+        _loadOrder();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Order updated to ${status.replaceAll('_', ' ')}'),
+            backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating,
+          ));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(resp['message'] as String? ?? 'Failed to update status'),
+            backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating,
+          ));
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Network error'),
+          backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
+
+  Widget _buildTimelineEntry(TimelineEntry entry, {bool isLast = false}) {
     final date = _formatDateTime(entry.timestamp);
     if (entry.status.isEmpty) return const SizedBox();
     return Padding(
@@ -336,11 +488,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   shape: BoxShape.circle,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 30,
-                color: AppTheme.border,
-              ),
+              if (!isLast)
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: AppTheme.border,
+                ),
             ],
           ),
           const SizedBox(width: 10),
@@ -355,16 +508,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     Row(
                       children: [
                         StatusBadge(status: entry.status, fontSize: 10),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         if (date.isNotEmpty)
-                          Text(date,
-                              style: const TextStyle(
-                                  color: AppTheme.textTertiary, fontSize: 10)),
+                          Flexible(
+                            child: Text(date,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: AppTheme.textTertiary, fontSize: 10)),
+                          ),
                       ],
                     ),
                     if (entry.note != null && entry.note!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(entry.note!,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               color: AppTheme.textSecondary, fontSize: 12)),
                     ],

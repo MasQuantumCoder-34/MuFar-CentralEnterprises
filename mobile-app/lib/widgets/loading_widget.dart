@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class LoadingWidget extends StatelessWidget {
-  final String? message;
-
-  const LoadingWidget({super.key, this.message});
+  const LoadingWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,12 +17,6 @@ class LoadingWidget extends StatelessWidget {
               color: AppTheme.primary,
             ),
           ),
-          if (message != null) ...[
-            const SizedBox(height: 16),
-            Text(message!,
-                style: const TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 14)),
-          ],
         ],
       ),
     );

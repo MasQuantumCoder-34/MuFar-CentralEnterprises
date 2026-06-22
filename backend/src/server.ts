@@ -56,7 +56,7 @@ app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Mufar Commerce API is running',
+    message: 'Central Enterprises API is running',
     data: {
       environment: config.nodeEnv,
       timestamp: new Date().toISOString(),
@@ -90,7 +90,7 @@ const autoSeed = async (): Promise<void> => {
   const adminExists = await User.findOne({ email: 'admin@mufar.com' });
   if (!adminExists) {
     await User.create({
-      storeName: 'Mufar Technologies',
+      storeName: 'Central Enterprises',
       ownerName: 'Super Admin',
       name: 'Super Admin',
       email: 'admin@mufar.com',
@@ -107,10 +107,10 @@ const autoSeed = async (): Promise<void> => {
   const settingsExist = await Settings.findOne();
   if (!settingsExist) {
     await Settings.create({
-      companyName: 'Mufar Commerce',
+      companyName: 'Central Enterprises',
       contactNumber: '9999999999',
       email: 'admin@mufar.com',
-      address: 'Mufar Technologies HQ',
+      address: 'Central Enterprises HQ',
       gstNumber: 'GSTIN123456',
       invoicePrefix: 'INV',
       lowStockThreshold: 10,

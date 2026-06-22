@@ -15,7 +15,6 @@ import '../orders/create_order_screen.dart';
 import '../orders/modify_order_screen.dart';
 import '../orders/cancel_order_screen.dart';
 import '../clients/clients_screen.dart';
-import '../products/products_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final void Function(int index)? onTabChange;
@@ -40,6 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
+      if (mounted) context.read<AuthProvider>().loadProfile();
       final results = await Future.wait([
         _api.get(ApiEndpoints.orders, queryParams: {'limit': '5'}),
         _api.get(ApiEndpoints.users, queryParams: {'role': 'client', 'limit': '100'}),
@@ -62,7 +62,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().user;
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard'), automaticallyImplyLeading: false),
       body: _loading
@@ -72,7 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
-                  Text('Dashboard',
+                  Text('Central Enterprises',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                   Text('Internal B2B Order Management',
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
@@ -106,11 +105,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               child: Row(children: [
-                                Expanded(flex: 2, child: Text(order.orderNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-                                Expanded(flex: 2, child: Text(order.clientName ?? '', style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                Expanded(flex: 2, child: Text(order.clientName ?? order.orderNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+                                Expanded(flex: 2, child: Text(order.clientName != null ? order.orderNumber : '', style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
                                 Expanded(child: Text('₹${order.total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11), textAlign: TextAlign.right)),
                                 const SizedBox(width: 4),
-                                SizedBox(width: 80, child: StatusBadge(status: order.status, fontSize: 9)),
+                                Flexible(child: StatusBadge(status: order.status, fontSize: 9)),
                               ]),
                             ),
                           ),
@@ -191,7 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 6),
-            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
           ]),
         ),
       ),

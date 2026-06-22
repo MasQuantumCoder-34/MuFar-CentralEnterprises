@@ -1,22 +1,35 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primary = Color(0xFF164A62);
-  static const Color primaryLight = Color(0xFF2E6B84);
-  static const Color primaryDark = Color(0xFF0E3446);
-  static const Color accent = Color(0xFF78B46A);
-  static const Color accentDark = Color(0xFF5A9A4E);
-  static const Color background = Color(0xFFF8F9FA);
+  // Brand color - Deep Sky Blue
+  static const Color primary = Color(0xFF00BFFF);
+
+  // Darker variants with good white text contrast
+  // Button bg: #0066AA → 5.4:1 contrast with white ✓
+  // AppBar bg:  #005588 → 9.0:1 contrast with white ✓
+  static const Color primaryDark = Color(0xFF0066AA);
+  static const Color primaryLight = Color(0xFF87CEEB);
+  static const Color primaryDarker = Color(0xFF005588);
+
+  static const Color accent = Color(0xFF00BFFF);
+
+  // Backgrounds
+  static const Color background = Color(0xFFF0F8FF);
   static const Color surface = Colors.white;
-  static const Color surfaceVariant = Color(0xFFF1F3F5);
-  static const Color textPrimary = Color(0xFF1A1A2E);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color surfaceVariant = Color(0xFFE6F4FF);
+
+  // Text – high contrast
+  static const Color textPrimary = Color(0xFF0A1628);
+  static const Color textSecondary = Color(0xFF3D5A70);
+  static const Color textTertiary = Color(0xFF6B8A9E);
+
+  // Semantic
   static const Color error = Color(0xFFDC2626);
   static const Color warning = Color(0xFFF59E0B);
   static const Color success = Color(0xFF10B981);
-  static const Color border = Color(0xFFE5E7EB);
+  static const Color border = Color(0xFFB8D4E8);
 
+  // Text styles
   static const TextStyle _heading1 = TextStyle(
     fontSize: 26, fontWeight: FontWeight.w700, color: textPrimary, height: 1.3,
   );
@@ -43,6 +56,7 @@ class AppTheme {
         primary: primary,
         onPrimary: Colors.white,
         primaryContainer: primary.withOpacity(0.12),
+        onPrimaryContainer: Color(0xFF003355),
         secondary: accent,
         onSecondary: Colors.white,
         secondaryContainer: accent.withOpacity(0.12),
@@ -68,7 +82,7 @@ class AppTheme {
         labelSmall: _caption,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: primary,
+        backgroundColor: primaryDarker,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -79,7 +93,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
+          backgroundColor: primaryDark,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 50),
           elevation: 0,
@@ -94,7 +108,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primary,
-          side: const BorderSide(color: border),
+          side: const BorderSide(color: primary),
           minimumSize: const Size(double.infinity, 50),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),

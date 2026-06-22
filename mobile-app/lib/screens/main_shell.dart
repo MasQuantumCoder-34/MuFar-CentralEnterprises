@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'orders/orders_screen.dart';
-import 'orders/order_detail_screen.dart';
 import 'orders/create_order_screen.dart';
 import 'orders/modify_order_screen.dart';
 import 'orders/cancel_order_screen.dart';
@@ -16,6 +16,7 @@ import 'reports/reports_screen.dart';
 import 'analytics/revenue_analytics_screen.dart';
 import 'analytics/order_analytics_screen.dart';
 import 'profile/profile_screen.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 
 class MainShell extends StatefulWidget {
@@ -59,12 +60,10 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  static const _titles = ['Dashboard', 'Orders', 'Products', 'Categories', 'Clients'];
-
   Widget _buildDrawer() {
     return Drawer(
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.fromLTRB(0, 0, 0, MediaQuery.of(context).padding.bottom + 20),
         children: [
           DrawerHeader(
             decoration: const BoxDecoration(color: AppTheme.primary),
@@ -72,16 +71,16 @@ class _MainShellState extends State<MainShell> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Container(
-                  width: 48, height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/app-logo.jpeg',
+                    width: 48, height: 48,
+                    fit: BoxFit.cover,
                   ),
-                  child: const Icon(Icons.store, color: Colors.white, size: 28),
                 ),
                 const SizedBox(height: 12),
-                const Text('Mufar Central Enterprises',
+                const Text('Central Enterprises',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 const Text('Admin Panel',
                     style: TextStyle(color: Colors.white70, fontSize: 12)),
@@ -106,6 +105,29 @@ class _MainShellState extends State<MainShell> {
           const Divider(),
           _drawerItem(Icons.settings_outlined, 'Settings', onTap: () { Navigator.pop(context); _openPage(const SettingsScreen()); }),
           _drawerItem(Icons.person_outline, 'Profile', onTap: () { Navigator.pop(context); _openPage(const ProfileScreen()); }),
+          const Divider(),
+          _drawerItem(Icons.logout_rounded, 'Logout',
+            onTap: () {
+              Navigator.pop(context);
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.read<AuthProvider>().logout();
+                      },
+                      child: const Text('Logout', style: TextStyle(color: AppTheme.error)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

@@ -2,11 +2,15 @@ class ProductSize {
   final String name;
   final double mrp;
   final double salesPrice;
+  final int stockQuantity;
+  final int lowStockThreshold;
 
   ProductSize({
     required this.name,
     required this.mrp,
     required this.salesPrice,
+    this.stockQuantity = 0,
+    this.lowStockThreshold = 10,
   });
 
   factory ProductSize.fromJson(dynamic json) {
@@ -18,6 +22,8 @@ class ProductSize {
       name: map['name'] as String? ?? '',
       mrp: (map['mrp'] as num?)?.toDouble() ?? 0,
       salesPrice: (map['salesPrice'] as num?)?.toDouble() ?? 0,
+      stockQuantity: map['stockQuantity'] as int? ?? 0,
+      lowStockThreshold: map['lowStockThreshold'] as int? ?? 10,
     );
   }
 }
@@ -28,12 +34,10 @@ class Product {
   final String sku;
   final String? categoryId;
   final String? categoryName;
-  final double mrp;
-  final double salesPrice;
   final List<String> images;
   final List<ProductSize> sizes;
-  final int stockQuantity;
-  final int lowStockThreshold;
+  final int totalStockFallback;
+  final int lowStockThresholdFallback;
   final bool isActive;
 
   Product({
@@ -42,12 +46,10 @@ class Product {
     this.sku = '',
     this.categoryId,
     this.categoryName,
-    this.mrp = 0,
-    this.salesPrice = 0,
     this.images = const [],
     this.sizes = const [],
-    this.stockQuantity = 0,
-    this.lowStockThreshold = 10,
+    this.totalStockFallback = 0,
+    this.lowStockThresholdFallback = 10,
     this.isActive = true,
   });
 
@@ -74,14 +76,31 @@ class Product {
       sku: json['sku'] as String? ?? '',
       categoryId: catId,
       categoryName: catName,
-      mrp: (json['mrp'] as num?)?.toDouble() ?? 0,
-      salesPrice: (json['salesPrice'] as num?)?.toDouble() ?? 0,
       images: json['images'] != null ? List<String>.from(json['images'] as List) : [],
       sizes: sizes,
-      stockQuantity: json['stockQuantity'] as int? ?? 0,
-      lowStockThreshold: json['lowStockThreshold'] as int? ?? 10,
+      totalStockFallback: json['stockQuantity'] as int? ?? 0,
+      lowStockThresholdFallback: json['lowStockThreshold'] as int? ?? 10,
       isActive: json['isActive'] as bool? ?? true,
     );
+  }
+
+  int get totalStock {
+    final sizeSum = sizes.fold(0, (sum, s) => sum + s.stockQuantity);
+    return sizeSum > 0 ? sizeSum : totalStockFallback;
+  }
+
+  String stockDisplay() {
+    if (sizes.isEmpty) return totalStockFallback > 0 ? 'Total: $totalStockFallback' : '0';
+    final sizeSum = sizes.fold(0, (sum, s) => sum + s.stockQuantity);
+    if (sizeSum > 0) {
+      final perSize = sizes.map((s) => '${s.name}:${s.stockQuantity}').join(' | ');
+      return '$perSize | Total: $sizeSum';
+    }
+    if (totalStockFallback > 0) {
+      if (sizes.length == 1) return '${sizes.first.name}:$totalStockFallback | Total: $totalStockFallback';
+      return 'Total: $totalStockFallback';
+    }
+    return sizes.map((s) => '${s.name}:0').join(' | ');
   }
 
   double getPriceForSize(String? sizeName) {
@@ -91,7 +110,7 @@ class Product {
         return found.first.salesPrice;
       }
     }
-    return salesPrice > 0 ? salesPrice : mrp;
+    return sizes.isNotEmpty ? sizes.first.salesPrice : 0;
   }
 
   double getMrpForSize(String? sizeName) {
@@ -101,6 +120,6 @@ class Product {
         return found.first.mrp;
       }
     }
-    return mrp;
+    return sizes.isNotEmpty ? sizes.first.mrp : 0;
   }
 }

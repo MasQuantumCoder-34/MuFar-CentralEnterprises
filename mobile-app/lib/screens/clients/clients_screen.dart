@@ -50,11 +50,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
     }
   }
 
-  Future<void> _toggleActive(User client) async {
-    try {
-      await _api.put('/users/${client.id}', body: {'isActive': !client.isActive});
-      _loadClients();
-    } catch (_) {}
+  Future<void> _editClient(User client) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AddClientScreen(client: client)),
+    );
+    if (result == true) _loadClients();
   }
 
   Future<void> _deleteClient(User client) async {
@@ -175,12 +176,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
                                         icon: const Icon(Icons.more_vert, size: 18),
                                         onSelected: (v) {
                                           if (v == 'order') Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateOrderScreen()));
-                                          if (v == 'toggle') _toggleActive(client);
+                                          if (v == 'edit') _editClient(client);
                                           if (v == 'delete') _deleteClient(client);
                                         },
                                         itemBuilder: (_) => [
                                           const PopupMenuItem(value: 'order', child: Row(children: [Icon(Icons.shopping_cart_outlined, size: 16), SizedBox(width: 8), Text('Create Order')])),
-                                          const PopupMenuItem(value: 'toggle', child: Row(children: [Icon(Icons.visibility_outlined, size: 16), SizedBox(width: 8), Text('Toggle Active')])),
+                                          const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit')])),
                                           const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppTheme.error), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppTheme.error))])),
                                         ],
                                       ),
