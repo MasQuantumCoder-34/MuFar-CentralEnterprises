@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_endpoints.dart';
@@ -190,7 +191,7 @@ class ApiClient {
     }, auth: auth);
   }
 
-  Future<http.Response> uploadFiles(String endpoint, List<MapEntry<String, String>> files, {bool auth = true}) async {
+  Future<http.Response> uploadBytes(String endpoint, String fieldName, Uint8List bytes, {String filename = 'image.jpg', bool auth = true}) async {
     return _requestWithRefresh(() async {
       final uri = Uri.parse('${ApiEndpoints.baseUrl}$endpoint');
       final request = http.MultipartRequest('POST', uri);
@@ -198,9 +199,7 @@ class ApiClient {
       if (auth && token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-      for (final entry in files) {
-        request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value));
-      }
+      request.files.add(http.MultipartFile.fromBytes(fieldName, bytes, filename: filename));
       final streamed = await request.send().timeout(const Duration(seconds: 30));
       return http.Response.fromStream(streamed);
     }, auth: auth);

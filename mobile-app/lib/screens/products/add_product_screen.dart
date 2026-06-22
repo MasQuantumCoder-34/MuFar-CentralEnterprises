@@ -1,6 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
@@ -50,6 +50,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _skuCtrl = TextEditingController();
   String? _imagePath;
   String? _imageUrl;
+  XFile? _pickedFile;
+  Uint8List? _imageBytes;
   bool _uploadingImage = false;
 
   String? _selectedCategoryId;
@@ -233,8 +235,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1024);
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
       setState(() {
+        _pickedFile = picked;
         _imagePath = picked.path;
+        _imageBytes = bytes;
         _imageUrl = null;
         _uploadError = false;
       });
@@ -243,15 +248,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Future<void> _uploadImage() async {
-    if (_imagePath == null) return;
+    if (_imageBytes == null) return;
     setState(() {
       _uploadingImage = true;
       _uploadError = false;
     });
     try {
-      final res = await _api.uploadFiles(ApiEndpoints.upload, [
-        MapEntry('images', _imagePath!),
-      ]);
+      final bytes = _imageBytes!;
+      final res = await _api.uploadBytes(ApiEndpoints.upload, 'images', bytes, filename: _pickedFile?.name ?? 'image.jpg');
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       if (body['success'] == true && body['data'] != null) {
         final data = body['data'] as Map<String, dynamic>;
@@ -329,7 +333,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              Image.file(File(_imagePath!), fit: BoxFit.cover),
+                              Image.memory(_imageBytes!, fit: BoxFit.cover),
                               if (_uploadingImage)
                                 Container(
                                   color: Colors.black38,
