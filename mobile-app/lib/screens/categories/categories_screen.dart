@@ -6,6 +6,7 @@ import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/app_network_image.dart';
+import '../../widgets/app_dialog.dart';
 import 'add_category_screen.dart';
 import 'category_products_screen.dart';
 
@@ -52,20 +53,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   Future<void> _deleteCategory(Category cat) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Category'),
-        content: Text('Delete "${cat.name}"? Products in this category may be affected.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: 'Delete Category',
+      content: Text('Delete "${cat.name}"? Products in this category may be affected.'),
+      confirmLabel: 'Delete',
+      confirmColor: AppTheme.error,
     );
     if (confirmed != true) return;
     try {

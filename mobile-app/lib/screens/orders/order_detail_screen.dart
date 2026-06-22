@@ -416,21 +416,38 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
             ),
           ],
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: newStatus == 'cancelled' ? AppTheme.error : AppTheme.primary,
-              foregroundColor: Colors.white,
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.error,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('No', style: TextStyle(color: Colors.white)),
             ),
-            onPressed: () {
-              if (newStatus == 'cancelled' && notesCtrl.text.trim().isEmpty) return;
-              Navigator.pop(ctx, true);
-            },
-            child: Text(label),
           ),
-        ],
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: newStatus == 'cancelled' ? AppTheme.error : AppTheme.primaryDark,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                if (newStatus == 'cancelled' && notesCtrl.text.trim().isEmpty) return;
+                Navigator.pop(ctx, true);
+              },
+              child: Text(label),
+            ),
+          ),
+        ]),
       ),
     );
 

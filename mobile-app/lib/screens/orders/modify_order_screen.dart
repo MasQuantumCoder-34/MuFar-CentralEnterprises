@@ -8,6 +8,7 @@ import '../../services/api_client.dart';
 import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/status_badge.dart';
 import 'order_detail_screen.dart';
 
@@ -163,16 +164,11 @@ class _EditOrderPageState extends State<_EditOrderPage> {
     final validItems = _items.where((e) => e.productId.isNotEmpty).toList();
     final badCount = _items.length - validItems.length;
     if (badCount > 0) {
-      final remove = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Missing Products'),
-          content: Text('$badCount item(s) in this order reference products that no longer exist. They will be removed when saving. Continue?'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove & Save')),
-          ],
-        ),
+      final remove = await AppDialog.showConfirm(
+        context,
+        title: 'Missing Products',
+        content: Text('$badCount item(s) in this order reference products that no longer exist. They will be removed when saving. Continue?'),
+        confirmLabel: 'Remove & Save',
       );
       if (remove != true) return;
     }

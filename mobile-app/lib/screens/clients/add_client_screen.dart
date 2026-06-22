@@ -18,7 +18,6 @@ class _AddClientScreenState extends State<AddClientScreen> {
   final ApiClient _api = ApiClient();
 
   final _storeNameCtrl = TextEditingController();
-  final _ownerNameCtrl = TextEditingController();
   final _mobileCtrl = TextEditingController();
   final _gstCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
@@ -33,7 +32,6 @@ class _AddClientScreenState extends State<AddClientScreen> {
     if (_isEditing) {
       final c = widget.client!;
       _storeNameCtrl.text = c.storeName ?? '';
-      _ownerNameCtrl.text = c.ownerName ?? '';
       _mobileCtrl.text = c.mobile ?? '';
       _gstCtrl.text = c.gstNumber ?? '';
       _addressCtrl.text = c.address ?? '';
@@ -43,7 +41,6 @@ class _AddClientScreenState extends State<AddClientScreen> {
   @override
   void dispose() {
     _storeNameCtrl.dispose();
-    _ownerNameCtrl.dispose();
     _mobileCtrl.dispose();
     _gstCtrl.dispose();
     _addressCtrl.dispose();
@@ -56,7 +53,6 @@ class _AddClientScreenState extends State<AddClientScreen> {
     try {
       final body = <String, dynamic>{
         'storeName': _storeNameCtrl.text.trim(),
-        'ownerName': _ownerNameCtrl.text.trim(),
         'role': 'client',
       };
       if (_mobileCtrl.text.trim().isNotEmpty) body['mobile'] = _mobileCtrl.text.trim();
@@ -113,7 +109,6 @@ class _AddClientScreenState extends State<AddClientScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildField('Store Name *', _storeNameCtrl, required: true),
-              _buildField('Owner Name *', _ownerNameCtrl, required: true),
               _buildField('Mobile', _mobileCtrl, keyboardType: TextInputType.phone),
               _buildField('GST Number', _gstCtrl),
               _buildField('Address', _addressCtrl),

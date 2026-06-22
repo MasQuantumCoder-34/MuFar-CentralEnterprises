@@ -63,7 +63,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard'), automaticallyImplyLeading: false),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+        title: const Text('Dashboard'),
+      ),
       body: _loading
           ? const LoadingWidget()
           : RefreshIndicator(
@@ -163,10 +169,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 1.5, crossAxisSpacing: 10, mainAxisSpacing: 10,
       children: [
-        _actionCard(Icons.add_circle_outline, 'Create Order', AppTheme.primary, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateOrderScreen()))),
-        _actionCard(Icons.receipt_long_outlined, 'View Orders', AppTheme.accent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()))),
-        _actionCard(Icons.edit_outlined, 'Modify Orders', AppTheme.primaryLight, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ModifyOrderScreen()))),
-        _actionCard(Icons.cancel_outlined, 'Cancel Orders', AppTheme.error, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CancelOrderScreen()))),
+        _actionCard(Icons.add_circle_outline, 'Create Order', const Color(0xFF10B981), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateOrderScreen()))),
+        _actionCard(Icons.receipt_long_outlined, 'View Orders', const Color(0xFF00BFFF), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()))),
+        _actionCard(Icons.edit_outlined, 'Modify Orders', const Color(0xFFF59E0B), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ModifyOrderScreen()))),
+        _actionCard(Icons.cancel_outlined, 'Cancel Orders', const Color(0xFFDC2626), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CancelOrderScreen()))),
       ],
     );
   }
