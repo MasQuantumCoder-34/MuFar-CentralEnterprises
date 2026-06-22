@@ -122,7 +122,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           _buildSummary(),
                           const SizedBox(height: 20),
                           _buildStatusActions(),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 12),
+                          if (_order!.status == 'pending' || _order!.status == 'cancelled') ...[
+                            _buildDeleteButton(),
+                            const SizedBox(height: 12),
+                          ],
                           _buildSectionTitle('Timeline'),
                           const SizedBox(height: 8),
                           if (_order!.timeline.isEmpty)
@@ -474,6 +478,97 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(resp['message'] as String? ?? 'Failed to update status'),
+            backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating,
+          ));
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Network error'),
+          backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
+
+  Widget _buildDeleteButton() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.delete_outline, size: 18, color: AppTheme.error),
+                const SizedBox(width: 6),
+                const Text('Delete Order',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppTheme.textPrimary)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _showDeleteConfirmDialog,
+                icon: const Icon(Icons.delete_forever, size: 16),
+                label: const Text('Delete this order', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDeleteConfirmDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Order'),
+        content: Text('Are you sure you want to delete ${_order!.orderNumber}? This action cannot be undone.',
+            style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) await _deleteOrder();
+  }
+
+  Future<void> _deleteOrder() async {
+    try {
+      final res = await _api.delete(ApiEndpoints.order(widget.orderId));
+      final resp = jsonDecode(res.body) as Map<String, dynamic>;
+      if (resp['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Order deleted successfully'),
+            backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating,
+          ));
+          Navigator.pop(context, true);
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(resp['message'] as String? ?? 'Failed to delete order'),
             backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating,
           ));
         }

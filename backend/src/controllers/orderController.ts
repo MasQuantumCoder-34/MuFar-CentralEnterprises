@@ -640,6 +640,66 @@ const cancelOrder = async (req: AuthRequest, res: Response, next: NextFunction):
   }
 };
 
+const deleteOrder = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found', error: 'Not Found' });
+      return;
+    }
+
+    const deletableStatuses = [OrderStatus.PENDING, OrderStatus.CANCELLED];
+    if (!deletableStatuses.includes(order.status)) {
+      res.status(400).json({
+        success: false,
+        message: `Order cannot be deleted in ${order.status} status. Only PENDING or CANCELLED orders can be deleted.`,
+        error: 'Bad Request',
+      });
+      return;
+    }
+
+    if (order.status === OrderStatus.PENDING) {
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          const oldStock = product.stockQuantity;
+          product.stockQuantity += item.quantity;
+          await product.save();
+
+          await InventoryLog.create({
+            product: product._id,
+            action: InventoryAction.STOCK_IN,
+            quantity: item.quantity,
+            previousStock: oldStock,
+            newStock: product.stockQuantity,
+            referenceId: String(order._id),
+            referenceModel: 'Order',
+            performedBy: req.user?._id,
+            notes: `Stock restored for deleted Order ${order.orderNumber}`,
+          });
+        }
+      }
+    }
+
+    await ActivityLog.create({
+      user: req.user?._id,
+      action: ActivityAction.DELETE,
+      details: `Order ${order.orderNumber} deleted by ${req.user?.email}`,
+      ip: req.ip,
+    });
+
+    await Order.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Order deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   getOrders,
   createOrder,
@@ -650,4 +710,5 @@ export {
   getOrderInvoice,
   getOrderTracking,
   cancelOrder,
+  deleteOrder,
 };

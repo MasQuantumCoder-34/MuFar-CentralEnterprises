@@ -68,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: const Icon(Icons.menu),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
-        title: const Text('Dashboard'),
+        title: const Text('Centeral Enterprises'),
       ),
       body: _loading
           ? const LoadingWidget()
@@ -77,9 +77,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
-                  Text('Central Enterprises',
+                  Text('Towseef Salman Enterprises',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                  Text('Internal B2B Order Management',
+                  Text('Babies and Adult Diaper',
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                   const SizedBox(height: 20),
                   _buildActionCards(),
@@ -104,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     )
                   else
                     ..._recentOrders.map((order) => Card(
-                          margin: const EdgeInsets.only(bottom: 6),
+                          margin: const EdgeInsets.only(bottom: 8),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: order.id))),
@@ -114,8 +114,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Expanded(flex: 2, child: Text(order.clientName ?? order.orderNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
                                 Expanded(flex: 2, child: Text(order.clientName != null ? order.orderNumber : '', style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
                                 Expanded(child: Text('₹${order.total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11), textAlign: TextAlign.right)),
-                                const SizedBox(width: 4),
-                                Flexible(child: StatusBadge(status: order.status, fontSize: 9)),
+                                const SizedBox(width: 8),
+                                Expanded(flex: 1, child: StatusBadge(status: order.status, fontSize: 9)),
                               ]),
                             ),
                           ),
@@ -141,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     )
                   else
                     ..._clients.take(5).map((client) => Card(
-                          margin: const EdgeInsets.only(bottom: 6),
+                          margin: const EdgeInsets.only(bottom: 8),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             child: Row(children: [

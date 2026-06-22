@@ -18,6 +18,8 @@ class StatusBadge extends StatelessWidget {
       ),
       child: Text(
         config.label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: Colors.white,
           fontSize: fontSize,
