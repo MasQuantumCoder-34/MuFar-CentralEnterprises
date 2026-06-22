@@ -203,7 +203,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                     margin: const EdgeInsets.only(bottom: 4),
                     child: ListTile(
                       title: Text(d['name'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      subtitle: Text('SKU: ${d['sku'] as String? ?? 'N/A'}', style: const TextStyle(fontSize: 11)),
+                      subtitle: d['pieces'] != null ? Text('Pieces: ${d['pieces']}', style: const TextStyle(fontSize: 11)) : null,
                       trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
                         Text('Stock: ${d['stockQuantity'] ?? 0}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: (d['stockQuantity'] as num?)?.toInt() == 0 ? AppTheme.error : AppTheme.textPrimary)),
                         Text('Threshold: ${d['lowStockThreshold'] ?? 10}', style: const TextStyle(fontSize: 10, color: AppTheme.textTertiary)),

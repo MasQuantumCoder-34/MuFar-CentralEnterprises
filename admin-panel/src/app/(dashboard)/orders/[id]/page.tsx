@@ -154,20 +154,18 @@ export default function OrderDetailPage() {
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>Qty</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Qty</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
               </TableHeader>
               <TableBody>
                 {order.items.map((item, i) => (
                   <TableRow key={i}>
                     <TableCell className="font-medium">{item.productName}</TableCell>
-                    <TableCell>{item.sku}</TableCell>
                     <TableCell>{item.size || '-'}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>₹{item.price.toLocaleString()}</TableCell>
@@ -254,7 +252,7 @@ export default function OrderDetailPage() {
                   </Button>
                 </form>
               )}
-              {currentStatus !== 'cancelled' && currentStatus !== 'delivered' && (
+              {(currentStatus === 'pending' || currentStatus === 'cancelled') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -265,17 +263,15 @@ export default function OrderDetailPage() {
                   Cancel Order
                 </Button>
               )}
-              {(currentStatus === 'pending' || currentStatus === 'cancelled') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 w-full text-destructive border-destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Order
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full text-destructive border-destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Order
+              </Button>
             </CardContent>
           </Card>
 

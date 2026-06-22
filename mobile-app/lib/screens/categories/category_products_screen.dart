@@ -91,8 +91,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                                       const SizedBox(height: 4),
-                                      if (p.sku.isNotEmpty)
-                                        Text('Piece: ${p.sku}',
+                                      if (p.pieces > 0)
+                                        Text('Pieces: ${p.pieces}',
                                             style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                                       const SizedBox(height: 2),
                                       Row(

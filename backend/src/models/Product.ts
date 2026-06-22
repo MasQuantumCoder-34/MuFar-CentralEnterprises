@@ -21,11 +21,10 @@ const productSchema = new Schema<IProductDocument>(
       required: [true, 'Product name is required'],
       trim: true,
     },
-    sku: {
-      type: String,
-      unique: true,
-      uppercase: true,
-      trim: true,
+    pieces: {
+      type: Number,
+      default: 1,
+      min: [0, 'Pieces cannot be negative'],
     },
     category: {
       type: Schema.Types.ObjectId,
@@ -88,7 +87,6 @@ productSchema.pre('init', function (doc: any) {
 });
 
 productSchema.index({ name: 'text' });
-productSchema.index({ sku: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1 });
 

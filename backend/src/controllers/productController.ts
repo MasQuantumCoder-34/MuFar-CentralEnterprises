@@ -52,11 +52,6 @@ const getProducts = async (req: AuthRequest, res: Response, next: NextFunction):
 
 const createProduct = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (!req.body.sku) {
-      const timestamp = Date.now().toString(36).toUpperCase();
-      req.body.sku = `PROD-${timestamp}`;
-    }
-
     const categoryExists = await Category.findById(req.body.category);
     if (!categoryExists) {
       res.status(400).json({ success: false, message: 'Category not found', error: 'Bad Request' });

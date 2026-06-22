@@ -59,6 +59,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   List<Product> get _filteredProducts {
     var result = _products;
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
+      result = result.where((p) => p.name.toLowerCase().contains(q)).toList();
+    }
     if (_selectedCategory != null) {
       result = result.where((p) => p.categoryId == _selectedCategory!.id).toList();
     }

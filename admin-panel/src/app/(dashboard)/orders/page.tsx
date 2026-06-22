@@ -30,6 +30,15 @@ export default function OrdersPage() {
 
   const clientFilter = searchParams.get('clientId') || '';
 
+  const { data: statusCounts } = useQuery({
+    queryKey: ['order-status-counts'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const res = await api.get<IApiResponse<{ status: string; count: number }[]>>('/orders/status-counts');
+      return res.data.data || [];
+    },
+  });
+
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders', page, limit, search, statusFilter, sortOrder, clientFilter],
     staleTime: 30 * 1000,
@@ -112,11 +121,11 @@ export default function OrdersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            {(statusCounts || []).map((sc) => (
+              <SelectItem key={sc.status} value={sc.status}>
+                {sc.status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} ({sc.count})
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={sortOrder} onValueChange={setSortOrder}>

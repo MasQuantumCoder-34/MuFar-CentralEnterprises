@@ -240,7 +240,8 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                                 Expanded(
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                     Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                    Text('SKU: ${p.sku.isNotEmpty ? p.sku : 'N/A'}', style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                                    if (p.pieces > 0)
+                                      Text('Pieces: ${p.pieces}', style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                                   ]),
                                 ),
                                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [

@@ -82,7 +82,7 @@ const adjustStock = async (req: AuthRequest, res: Response, next: NextFunction):
           String(admin._id),
           require('@mufar-commerce/shared').NotificationType.LOW_STOCK,
           'Low Stock Alert',
-          `Product ${product.name} (SKU: ${product.sku}) has low stock: ${newStock} units.`,
+          `Product ${product.name} has low stock: ${newStock} units.`,
           String(product._id),
           'Product'
         );
@@ -104,7 +104,6 @@ const adjustStock = async (req: AuthRequest, res: Response, next: NextFunction):
         product: {
           _id: product._id,
           name: product.name,
-          sku: product.sku,
           stockQuantity: product.stockQuantity,
         },
         previousStock,

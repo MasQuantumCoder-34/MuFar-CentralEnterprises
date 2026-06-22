@@ -55,10 +55,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(_product.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-                  if (_product.sku.isNotEmpty)
+                  if (_product.pieces > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text('SKU: ${_product.sku}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                      child: Text('Pieces: ${_product.pieces}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                     ),
                   if (_product.categoryName != null)
                     Padding(
