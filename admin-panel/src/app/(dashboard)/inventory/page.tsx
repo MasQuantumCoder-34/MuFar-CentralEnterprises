@@ -141,7 +141,6 @@ export default function InventoryPage() {
         ),
     },
     { key: 'name', header: 'Product' },
-    { key: 'sku', header: 'SKU' },
     {
       key: 'stockQuantity',
       header: 'Stock',

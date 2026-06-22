@@ -45,10 +45,9 @@ const generateInvoicePDF = async (order: IOrder, company: ISettings): Promise<Bu
       doc.fillColor('#ffffff')
         .text('#', leftMargin + 5, tableTop - 5)
         .text('Product', leftMargin + 30, tableTop - 5)
-        .text('SKU', leftMargin + 200, tableTop - 5)
-        .text('Qty', leftMargin + 290, tableTop - 5, { width: 40, align: 'center' })
-        .text('Price', leftMargin + 330, tableTop - 5, { width: 70, align: 'right' })
-        .text('Total', leftMargin + 420, tableTop - 5, { width: 70, align: 'right' });
+        .text('Qty', leftMargin + 200, tableTop - 5, { width: 40, align: 'center' })
+        .text('Price', leftMargin + 260, tableTop - 5, { width: 70, align: 'right' })
+        .text('Total', leftMargin + 350, tableTop - 5, { width: 70, align: 'right' });
 
       doc.fillColor('#000000');
       let yPos = tableTop + 15;
@@ -57,10 +56,9 @@ const generateInvoicePDF = async (order: IOrder, company: ISettings): Promise<Bu
         doc.font('Helvetica').fontSize(9);
         doc.text(`${i + 1}`, leftMargin + 5, yPos);
         doc.text(item.productName, leftMargin + 30, yPos, { width: 160 });
-        doc.text(item.sku, leftMargin + 200, yPos, { width: 80 });
-        doc.text(`${item.quantity}`, leftMargin + 290, yPos, { width: 40, align: 'center' });
-        doc.text(`₹${item.price.toFixed(2)}`, leftMargin + 330, yPos, { width: 70, align: 'right' });
-        doc.text(`₹${item.total.toFixed(2)}`, leftMargin + 420, yPos, { width: 70, align: 'right' });
+        doc.text(`${item.quantity}`, leftMargin + 200, yPos, { width: 40, align: 'center' });
+        doc.text(`₹${item.price.toFixed(2)}`, leftMargin + 260, yPos, { width: 70, align: 'right' });
+        doc.text(`₹${item.total.toFixed(2)}`, leftMargin + 350, yPos, { width: 70, align: 'right' });
         yPos += 20;
 
         if (yPos > 700) {

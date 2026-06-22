@@ -31,7 +31,7 @@ class ProductSize {
 class Product {
   final String id;
   final String name;
-  final String sku;
+  final int pieces;
   final String? categoryId;
   final String? categoryName;
   final List<String> images;
@@ -43,7 +43,7 @@ class Product {
   Product({
     required this.id,
     required this.name,
-    this.sku = '',
+    this.pieces = 1,
     this.categoryId,
     this.categoryName,
     this.images = const [],
@@ -73,7 +73,7 @@ class Product {
     return Product(
       id: json['_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      sku: json['sku'] as String? ?? '',
+      pieces: json['pieces'] as int? ?? 1,
       categoryId: catId,
       categoryName: catName,
       images: json['images'] != null ? List<String>.from(json['images'] as List) : [],

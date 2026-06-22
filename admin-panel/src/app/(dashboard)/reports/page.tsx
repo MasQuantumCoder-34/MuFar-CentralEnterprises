@@ -229,7 +229,6 @@ export default function ReportsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
                       <TableHead>Stock</TableHead>
                       <TableHead>Threshold</TableHead>
                     </TableRow>
@@ -238,7 +237,6 @@ export default function ReportsPage() {
                     {lowStockData.map((item: any) => (
                       <TableRow key={item._id}>
                         <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.sku}</TableCell>
                         <TableCell className="text-destructive font-bold">
                           {item.stockQuantity}
                         </TableCell>

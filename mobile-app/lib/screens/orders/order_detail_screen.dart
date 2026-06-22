@@ -123,10 +123,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           const SizedBox(height: 20),
                           _buildStatusActions(),
                           const SizedBox(height: 12),
-                          if (_order!.status == 'pending' || _order!.status == 'cancelled') ...[
-                            _buildDeleteButton(),
-                            const SizedBox(height: 12),
-                          ],
+                          _buildDeleteButton(),
+                          const SizedBox(height: 12),
                           _buildSectionTitle('Timeline'),
                           const SizedBox(height: 8),
                           if (_order!.timeline.isEmpty)
@@ -252,29 +250,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           fontWeight: FontWeight.w600, fontSize: 14,
                           color: AppTheme.textPrimary)),
                   Row(
-                    children: [
-                      if (item.size != null) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(item.size!,
-                              style: const TextStyle(
-                                  color: AppTheme.primary, fontSize: 10,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      if (item.sku.isNotEmpty)
-                        Flexible(
-                          child: Text('SKU: ${item.sku}',
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: AppTheme.textTertiary, fontSize: 11)),
-                        ),
-                    ],
+                              children: [
+                                if (item.size != null) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primary.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(item.size!,
+                                        style: const TextStyle(
+                                            color: AppTheme.primary, fontSize: 10,
+                                            fontWeight: FontWeight.w600)),
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+                              ],
                   ),
                 ],
               ),

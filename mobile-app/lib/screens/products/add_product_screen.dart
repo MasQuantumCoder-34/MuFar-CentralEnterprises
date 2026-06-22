@@ -48,7 +48,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final ApiClient _api = ApiClient();
 
   final _nameCtrl = TextEditingController();
-  final _skuCtrl = TextEditingController();
+  final _piecesCtrl = TextEditingController(text: '1');
   String? _imagePath;
   String? _imageUrl;
   XFile? _pickedFile;
@@ -80,7 +80,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     if (_isEditing) {
       final p = widget.product!;
       _nameCtrl.text = p.name;
-      _skuCtrl.text = p.sku;
+      _piecesCtrl.text = p.pieces.toString();
       if (p.images.isNotEmpty) _imageUrl = p.images.first;
       final allZero = p.sizes.every((s) => s.stockQuantity == 0);
       final hasFallback = p.totalStockFallback > 0;
@@ -108,7 +108,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _skuCtrl.dispose();
+    _piecesCtrl.dispose();
     for (final s in _sizes) {
       s.dispose();
     }
@@ -189,13 +189,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final body = <String, dynamic>{
         'name': _nameCtrl.text.trim(),
         'category': _selectedCategoryId,
+        'pieces': int.tryParse(_piecesCtrl.text.trim()) ?? 1,
         'sizes': sizeData,
         'mrp': sizeData.first['mrp'],
         'salesPrice': sizeData.first['salesPrice'],
         'stockQuantity': totalStock,
         'lowStockThreshold': sizeData.first['lowStockThreshold'],
       };
-      if (_skuCtrl.text.trim().isNotEmpty) body['sku'] = _skuCtrl.text.trim();
       if (_imageUrl != null && _imageUrl!.isNotEmpty) {
         body['images'] = [_imageUrl];
       }
@@ -305,7 +305,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildField('Product Name', _nameCtrl, required: true),
-              _buildField('Piece Code (optional)', _skuCtrl, hint: 'Whatever you type here will be saved'),
+              _buildField('Pieces', _piecesCtrl, hint: 'Number of pieces per unit', keyboardType: TextInputType.number),
               if (_loadingCategories)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 12),

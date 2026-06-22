@@ -40,7 +40,6 @@ import type { IOrder, IProduct, IApiResponse } from '@/types';
 interface EditableItem {
   productId: string;
   productName: string;
-  sku: string;
   price: number;
   quantity: number;
   stockQuantity: number;
@@ -86,7 +85,6 @@ export default function ModifyOrdersPage() {
       order.items.map((item) => ({
         productId: getProductId(item),
         productName: item.productName,
-        sku: item.sku,
         price: item.price,
         quantity: item.quantity,
         stockQuantity: 9999,

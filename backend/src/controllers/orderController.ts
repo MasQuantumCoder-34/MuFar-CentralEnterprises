@@ -18,6 +18,21 @@ import { getSizePrice } from '../utils/helpers';
 import ActivityLog from '../models/ActivityLog';
 import Settings from '../models/Settings';
 
+const getOrderStatusCounts = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const counts = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+    res.status(200).json({
+      success: true,
+      data: counts.map((c) => ({ status: c._id, count: c.count })),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getOrders = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -129,7 +144,6 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
       orderItems.push({
         product: product._id,
         productName: product.name,
-        sku: product.sku,
         quantity: item.quantity,
         price: itemPrice,
         total,
@@ -197,7 +211,7 @@ const getOrderById = async (req: AuthRequest, res: Response, next: NextFunction)
   try {
     const order = await Order.findById(req.params.id)
       .populate('client', 'storeName ownerName email mobile address city state pincode')
-      .populate('items.product', 'name images sku')
+      .populate('items.product', 'name images')
       .populate('timeline.updatedBy', 'name email role');
 
     if (!order) {
@@ -411,7 +425,6 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
         orderItems.push({
           product: product._id,
           productName: product.name,
-          sku: product.sku,
           quantity: item.quantity,
           price: itemPrice,
           total,
@@ -649,17 +662,7 @@ const deleteOrder = async (req: AuthRequest, res: Response, next: NextFunction):
       return;
     }
 
-    const deletableStatuses = [OrderStatus.PENDING, OrderStatus.CANCELLED];
-    if (!deletableStatuses.includes(order.status)) {
-      res.status(400).json({
-        success: false,
-        message: `Order cannot be deleted in ${order.status} status. Only PENDING or CANCELLED orders can be deleted.`,
-        error: 'Bad Request',
-      });
-      return;
-    }
-
-    if (order.status === OrderStatus.PENDING) {
+    if (order.status !== OrderStatus.CANCELLED) {
       for (const item of order.items) {
         const product = await Product.findById(item.product);
         if (product) {
@@ -701,6 +704,7 @@ const deleteOrder = async (req: AuthRequest, res: Response, next: NextFunction):
 };
 
 export {
+  getOrderStatusCounts,
   getOrders,
   createOrder,
   getOrderById,

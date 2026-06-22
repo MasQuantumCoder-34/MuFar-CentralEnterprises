@@ -214,7 +214,6 @@ export default function ProductsPage() {
         ),
     },
     { key: 'name', header: 'Name', sortable: true },
-    { key: 'sku', header: 'SKU', sortable: true },
     {
       key: 'category',
       header: 'Category',

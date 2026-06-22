@@ -54,7 +54,7 @@ export interface IProductSize {
 export interface IProduct {
   _id: string;
   name: string;
-  sku: string;
+  pieces: number;
   category: string | ICategory;
   mrp: number;
   salesPrice: number;
@@ -94,7 +94,6 @@ export interface IOrder {
 export interface IOrderItem {
   product: string | IProduct;
   productName: string;
-  sku: string;
   quantity: number;
   price: number;
   total: number;
@@ -111,7 +110,6 @@ export interface ITimelineEntry {
 export interface ICartItem {
   product: string;
   productName: string;
-  sku: string;
   price: number;
   quantity: number;
   image?: string;

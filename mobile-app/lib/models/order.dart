@@ -1,7 +1,6 @@
 class OrderItem {
   final String? productId;
   final String productName;
-  final String sku;
   final int quantity;
   final double price;
   final double total;
@@ -10,7 +9,6 @@ class OrderItem {
   OrderItem({
     this.productId,
     required this.productName,
-    this.sku = '',
     required this.quantity,
     required this.price,
     required this.total,
@@ -29,7 +27,6 @@ class OrderItem {
     return OrderItem(
       productId: productId,
       productName: json['productName'] as String? ?? '',
-      sku: json['sku'] as String? ?? '',
       quantity: json['quantity'] as int? ?? 0,
       price: (json['price'] as num?)?.toDouble() ?? 0,
       total: (json['total'] as num?)?.toDouble() ?? 0,
