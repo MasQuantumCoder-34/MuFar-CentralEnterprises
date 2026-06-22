@@ -93,25 +93,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
                     itemCount: _categories.length,
                     itemBuilder: (_, i) {
                       final cat = _categories[i];
-                      final colors = [
-                        const LinearGradient(colors: [Color(0xFF00BFFF), Color(0xFF009ACD)]),
-                        const LinearGradient(colors: [Color(0xFF87CEEB), Color(0xFF5DA5C4)]),
-                        const LinearGradient(colors: [Color(0xFF00BFFF), Color(0xFF87CEEB)]),
-                        const LinearGradient(colors: [Color(0xFF009ACD), Color(0xFF5DA5C4)]),
-                      ];
-                      final gradient = colors[i % colors.length];
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: Material(
-                          borderRadius: BorderRadius.circular(18),
-                          elevation: 2,
-                          shadowColor: AppTheme.primary.withOpacity(0.2),
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Card(
+                          clipBehavior: Clip.antiAlias,
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(18),
                             onTap: () async {
                               await Navigator.push(
                                 context,
@@ -120,69 +112,63 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 ),
                               );
                             },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(18),
-                                gradient: gradient,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: Row(
-                                  children: [
-                                    AppNetworkImage(
-                                      imageUrl: cat.image,
-                                      width: 64, height: 64, borderRadius: 14,
-                                      backgroundColor: Colors.white.withOpacity(0.2),
-                                      iconColor: Colors.white,
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(cat.name,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 17,
-                                                color: Colors.white,
-                                              )),
-                                          const SizedBox(height: 4),
-                                          if (cat.description != null && cat.description!.isNotEmpty)
-                                            Text(cat.description!,
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+                                  child: AppNetworkImage(
+                                    imageUrl: cat.image,
+                                    width: 100, height: 100, borderRadius: 0,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(cat.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                        if (cat.description != null && cat.description!.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(cat.description!,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
-                                          const SizedBox(height: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.25),
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              '${cat.productCount ?? 0} products',
-                                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-                                            ),
+                                                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuButton<String>(
-                                      icon: Icon(Icons.more_vert, color: Colors.white.withOpacity(0.8), size: 20),
-                                      onSelected: (v) {
-                                        if (v == 'edit') _editCategory(cat);
-                                        if (v == 'delete') _deleteCategory(cat);
-                                      },
-                                      itemBuilder: (_) => [
-                                        const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit')])),
-                                        const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppTheme.error), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppTheme.error))])),
+                                        const SizedBox(height: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primary.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            '${cat.productCount ?? 0} products',
+                                            style: const TextStyle(color: AppTheme.primary, fontSize: 11, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
                                       ],
                                     ),
+                                  ),
+                                ),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, size: 22, color: AppTheme.textSecondary),
+                                  onSelected: (v) {
+                                    if (v == 'edit') _editCategory(cat);
+                                    if (v == 'delete') _deleteCategory(cat);
+                                  },
+                                  itemBuilder: (_) => [
+                                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit')])),
+                                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppTheme.error), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppTheme.error))])),
                                   ],
                                 ),
-                              ),
+                                const SizedBox(width: 4),
+                              ],
                             ),
                           ),
                         ),

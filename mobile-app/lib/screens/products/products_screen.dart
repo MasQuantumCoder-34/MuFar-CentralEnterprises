@@ -164,14 +164,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       ? const Center(child: Text('No products found'))
                       : RefreshIndicator(
                           onRefresh: _loadData,
-                          child: GridView.builder(
+                          child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.68,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                            ),
                             itemCount: _filteredProducts.length,
                             itemBuilder: (_, i) {
                               final p = _filteredProducts[i];
@@ -187,64 +181,53 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                   clipBehavior: Clip.antiAlias,
                                   elevation: 1,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  child: Row(
                                     children: [
+                                      ClipRRect(
+                                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+                                        child: AppNetworkImage(
+                                          imageUrl: p.images.isNotEmpty ? p.images.first : null,
+                                          width: 100, height: 100,
+                                          borderRadius: 0,
+                                        ),
+                                      ),
                                       Expanded(
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: [
-                                            AppNetworkImage(
-                                              imageUrl: p.images.isNotEmpty ? p.images.first : null,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                              borderRadius: 0,
-                                            ),
-                                            Positioned(
-                                              top: 4, right: 4,
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black38,
-                                                  borderRadius: BorderRadius.circular(20),
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                              const SizedBox(height: 6),
+                                              Text('\u20B9${p.sizes.isNotEmpty ? p.sizes.first.salesPrice.toStringAsFixed(0) : '0'}',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primary)),
+                                              if (p.sizes.isNotEmpty)
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 4),
+                                                  child: Text(
+                                                    p.stockDisplay(),
+                                                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(fontSize: 12, color: p.totalStock <= 0 ? AppTheme.error : AppTheme.textSecondary),
+                                                  ),
                                                 ),
-                                                child: PopupMenuButton<String>(
-                                                  icon: const Icon(Icons.more_vert, size: 20, color: Colors.white),
-                                                  onSelected: (v) {
-                                                    if (v == 'edit') _editProduct(p);
-                                                    if (v == 'delete') _deleteProduct(p);
-                                                  },
-                                                  itemBuilder: (_) => [
-                                                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit')])),
-                                                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppTheme.error), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppTheme.error))])),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                            const SizedBox(height: 2),
-                                            Text('\u20B9${p.sizes.isNotEmpty ? p.sizes.first.salesPrice.toStringAsFixed(0) : '0'}',
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.primary)),
-                                            if (p.sizes.isNotEmpty)
-                                              Padding(
-                                                padding: const EdgeInsets.only(top: 2),
-                                                child: Text(
-                                                  p.stockDisplay(),
-                                                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(fontSize: 10, color: p.totalStock <= 0 ? AppTheme.error : AppTheme.textSecondary),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
+                                      PopupMenuButton<String>(
+                                        icon: const Icon(Icons.more_vert, size: 22, color: AppTheme.textSecondary),
+                                        onSelected: (v) {
+                                          if (v == 'edit') _editProduct(p);
+                                          if (v == 'delete') _deleteProduct(p);
+                                        },
+                                        itemBuilder: (_) => [
+                                          const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit')])),
+                                          const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppTheme.error), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppTheme.error))])),
+                                        ],
                                       ),
+                                      const SizedBox(width: 4),
                                     ],
                                   ),
                                 ),
