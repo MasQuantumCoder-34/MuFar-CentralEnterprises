@@ -103,7 +103,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <div className="flex h-14 items-center border-b px-4">
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
             <Store className="h-6 w-6 text-primary" />
-            <span>Mufar Commerce</span>
+            <span>Central Enterprises</span>
           </Link>
           <Button
             variant="ghost"

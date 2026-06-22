@@ -17,15 +17,15 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> tryAutoLogin() async {
     final loggedIn = await _authService.isLoggedIn();
-    if (loggedIn) {
-      final result = await _authService.getProfile();
-      if (result.success && result.data != null) {
-        _user = result.data;
-        _status = AuthStatus.authenticated;
-      } else {
-        await _authService.logout();
-        _status = AuthStatus.unauthenticated;
-      }
+    if (!loggedIn) {
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return;
+    }
+    final profile = await _authService.getProfile();
+    if (profile.success && profile.data != null) {
+      _user = profile.data;
+      _status = AuthStatus.authenticated;
     } else {
       _status = AuthStatus.unauthenticated;
     }
@@ -49,6 +49,14 @@ class AuthProvider extends ChangeNotifier {
     _status = AuthStatus.unauthenticated;
     notifyListeners();
     return false;
+  }
+
+  Future<void> loadProfile() async {
+    final result = await _authService.getProfile();
+    if (result.success && result.data != null) {
+      _user = result.data;
+      notifyListeners();
+    }
   }
 
   Future<void> logout() async {

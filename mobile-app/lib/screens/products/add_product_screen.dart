@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../models/category.dart';
+import '../../models/product.dart';
 import '../../services/api_client.dart';
 import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
@@ -9,19 +12,31 @@ class _SizeEntry {
   final TextEditingController nameCtrl;
   final TextEditingController mrpCtrl;
   final TextEditingController salesPriceCtrl;
-  _SizeEntry({required String name, required double mrp, required double salesPrice})
-      : nameCtrl = TextEditingController(text: name),
+  final TextEditingController stockCtrl;
+  final TextEditingController lowStockCtrl;
+  _SizeEntry({
+    required String name,
+    required double mrp,
+    required double salesPrice,
+    int stockQuantity = 0,
+    int lowStockThreshold = 10,
+  })  : nameCtrl = TextEditingController(text: name),
         mrpCtrl = TextEditingController(text: mrp.toString()),
-        salesPriceCtrl = TextEditingController(text: salesPrice.toString());
+        salesPriceCtrl = TextEditingController(text: salesPrice.toString()),
+        stockCtrl = TextEditingController(text: stockQuantity.toString()),
+        lowStockCtrl = TextEditingController(text: lowStockThreshold.toString());
   void dispose() {
     nameCtrl.dispose();
     mrpCtrl.dispose();
     salesPriceCtrl.dispose();
+    stockCtrl.dispose();
+    lowStockCtrl.dispose();
   }
 }
 
 class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+  final Product? product;
+  const AddProductScreen({super.key, this.product});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -33,34 +48,55 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   final _nameCtrl = TextEditingController();
   final _skuCtrl = TextEditingController();
-  final _mrpCtrl = TextEditingController();
-  final _salesPriceCtrl = TextEditingController();
-  final _stockCtrl = TextEditingController();
-  final _lowStockCtrl = TextEditingController(text: '10');
-  final _imageCtrl = TextEditingController();
+  String? _imagePath;
+  String? _imageUrl;
+  bool _uploadingImage = false;
 
   String? _selectedCategoryId;
   List<Category> _categories = [];
   bool _loadingCategories = true;
 
+  bool get _isEditing => widget.product != null;
+
   final List<_SizeEntry> _sizes = [];
-  final _availableSizeNames = ['SM', 'M', 'L', 'XL', 'XXL'];
+  final _availableSizeNames = ['Standard', 'SM', 'M', 'L', 'XL', 'XXL'];
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
+    if (_isEditing) {
+      final p = widget.product!;
+      _nameCtrl.text = p.name;
+      _skuCtrl.text = p.sku;
+      if (p.images.isNotEmpty) _imageUrl = p.images.first;
+      final allZero = p.sizes.every((s) => s.stockQuantity == 0);
+      final hasFallback = p.totalStockFallback > 0;
+      for (int i = 0; i < p.sizes.length; i++) {
+        final s = p.sizes[i];
+        var stock = s.stockQuantity;
+        if (allZero && hasFallback) {
+          final perSize = p.totalStockFallback ~/ p.sizes.length;
+          final remainder = p.totalStockFallback % p.sizes.length;
+          stock = perSize + (i < remainder ? 1 : 0);
+        }
+        _sizes.add(_SizeEntry(
+          name: s.name,
+          mrp: s.mrp,
+          salesPrice: s.salesPrice,
+          stockQuantity: stock,
+          lowStockThreshold: s.lowStockThreshold,
+        ));
+      }
+    } else {
+      _sizes.add(_SizeEntry(name: 'Standard', mrp: 0, salesPrice: 0));
+    }
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _skuCtrl.dispose();
-    _mrpCtrl.dispose();
-    _salesPriceCtrl.dispose();
-    _stockCtrl.dispose();
-    _lowStockCtrl.dispose();
-    _imageCtrl.dispose();
     for (final s in _sizes) {
       s.dispose();
     }
@@ -72,11 +108,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final res = await _api.get(ApiEndpoints.categories);
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       if (body['success'] == true && body['data'] != null) {
+        final cats = (body['data'] as List)
+            .map((e) => Category.fromJson(e as Map<String, dynamic>))
+            .toList();
         setState(() {
-          _categories = (body['data'] as List)
-              .map((e) => Category.fromJson(e as Map<String, dynamic>))
-              .toList();
+          _categories = cats;
           _loadingCategories = false;
+          if (_isEditing && widget.product!.categoryId != null) {
+            final match = cats.indexWhere((c) => c.id == widget.product!.categoryId);
+            if (match >= 0) _selectedCategoryId = cats[match].id;
+          }
         });
       }
     } catch (_) {
@@ -89,8 +130,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   void _addSize(String name) {
     setState(() {
-      _sizes.add(_SizeEntry(name: name, mrp: double.tryParse(_mrpCtrl.text) ?? 0,
-          salesPrice: double.tryParse(_salesPriceCtrl.text) ?? 0));
+      _sizes.add(_SizeEntry(name: name, mrp: 0, salesPrice: 0));
     });
   }
 
@@ -111,36 +151,52 @@ class _AddProductScreenState extends State<AddProductScreen> {
       );
       return;
     }
+    if (_sizes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('At least one size is required'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() => _loading = true);
     try {
+      final sizeData = _sizes.map((s) => {
+        'name': s.nameCtrl.text.trim(),
+        'mrp': double.parse(s.mrpCtrl.text.trim()),
+        'salesPrice': double.parse(s.salesPriceCtrl.text.trim()),
+        'stockQuantity': int.parse(s.stockCtrl.text.trim()),
+        'lowStockThreshold': int.parse(s.lowStockCtrl.text.trim()),
+      }).toList();
+
+      final totalStock = sizeData.fold<int>(0, (sum, s) => sum + (s['stockQuantity'] as int));
+
       final body = <String, dynamic>{
         'name': _nameCtrl.text.trim(),
         'category': _selectedCategoryId,
-        'mrp': double.parse(_mrpCtrl.text.trim()),
-        'salesPrice': double.parse(_salesPriceCtrl.text.trim()),
-        'stockQuantity': int.parse(_stockCtrl.text.trim()),
-        'lowStockThreshold': int.parse(_lowStockCtrl.text.trim()),
+        'sizes': sizeData,
+        'mrp': sizeData.first['mrp'],
+        'salesPrice': sizeData.first['salesPrice'],
+        'stockQuantity': totalStock,
+        'lowStockThreshold': sizeData.first['lowStockThreshold'],
       };
       if (_skuCtrl.text.trim().isNotEmpty) body['sku'] = _skuCtrl.text.trim();
-      if (_imageCtrl.text.trim().isNotEmpty) {
-        body['images'] = [_imageCtrl.text.trim()];
-      }
-      if (_sizes.isNotEmpty) {
-        body['sizes'] = _sizes.map((s) => {
-          'name': s.nameCtrl.text.trim(),
-          'mrp': double.parse(s.mrpCtrl.text.trim()),
-          'salesPrice': double.parse(s.salesPriceCtrl.text.trim()),
-        }).toList();
+      if (_imageUrl != null && _imageUrl!.isNotEmpty) {
+        body['images'] = [_imageUrl];
       }
 
-      final res = await _api.post(ApiEndpoints.products, body: body);
+      final res = _isEditing
+          ? await _api.put('/products/${widget.product!.id}', body: body)
+          : await _api.post(ApiEndpoints.products, body: body);
       final resp = jsonDecode(res.body) as Map<String, dynamic>;
       if (resp['success'] == true) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Product created successfully'),
+          SnackBar(
+            content: Text(_isEditing ? 'Product updated successfully' : 'Product created successfully'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -172,10 +228,38 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   bool _loading = false;
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1024);
+    if (picked != null) {
+      setState(() => _imagePath = picked.path);
+      _uploadImage();
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    if (_imagePath == null) return;
+    setState(() => _uploadingImage = true);
+    try {
+      final res = await _api.uploadFiles(ApiEndpoints.upload, [
+        MapEntry('images', _imagePath!),
+      ]);
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final data = body['data'] as Map<String, dynamic>;
+        final urls = (data['urls'] as List).cast<String>();
+        if (urls.isNotEmpty) {
+          setState(() => _imageUrl = urls.first);
+        }
+      }
+    } catch (_) {}
+    setState(() => _uploadingImage = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Product')),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit Product' : 'Add Product')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -184,7 +268,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildField('Product Name', _nameCtrl, required: true),
-              _buildField('SKU (optional)', _skuCtrl),
+              _buildField('Piece (optional)', _skuCtrl),
               if (_loadingCategories)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 12),
@@ -203,30 +287,63 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     validator: (v) => v == null ? 'Required' : null,
                   ),
                 ),
-              Row(
-                children: [
-                  Expanded(child: _buildField('MRP *', _mrpCtrl,
-                      keyboardType: TextInputType.number, required: true)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildField('Sales Price *', _salesPriceCtrl,
-                      keyboardType: TextInputType.number, required: true)),
-                ],
+              const SizedBox(height: 8),
+              const Text('Product Image', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _uploadingImage ? null : _pickImage,
+                child: Container(
+                  width: double.infinity,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: _imagePath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.file(File(_imagePath!), fit: BoxFit.cover),
+                              if (_uploadingImage)
+                                Container(
+                                  color: Colors.black38,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(color: Colors.white),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(_imageUrl != null ? Icons.check_circle : Icons.add_photo_alternate_outlined,
+                                size: 36, color: _imageUrl != null ? AppTheme.success : AppTheme.textTertiary),
+              if (_isEditing && widget.product!.totalStockFallback > 0 && widget.product!.sizes.length > 1)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 4),
+                  child: Text(
+                    'Previous total: ${widget.product!.totalStockFallback} — distribute across sizes',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.warning, fontStyle: FontStyle.italic),
+                  ),
+                ),
+              const SizedBox(height: 8),
+                            Text(
+                              _imageUrl != null ? 'Image uploaded' : 'Tap to pick image',
+                              style: TextStyle(fontSize: 13, color: _imageUrl != null ? AppTheme.success : AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                ),
               ),
-              Row(
-                children: [
-                  Expanded(child: _buildField('Stock *', _stockCtrl,
-                      keyboardType: TextInputType.number, required: true)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildField('Low Stock Threshold', _lowStockCtrl,
-                      keyboardType: TextInputType.number)),
-                ],
-              ),
-              _buildField('Image URL (optional)', _imageCtrl),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Sizes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Sizes & Pricing', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   if (_remainingSizeNames.isNotEmpty)
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.add_circle_outline, color: AppTheme.primary),
@@ -238,14 +355,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     ),
                 ],
               ),
-              if (_sizes.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('No sizes added. Product will be size-less.',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
-                )
-              else
-                ..._sizes.asMap().entries.map((e) => _buildSizeCard(e.key, e.value)),
+              const SizedBox(height: 8),
+              ..._sizes.asMap().entries.map((e) => _buildSizeCard(e.key, e.value)),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -259,7 +370,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           width: 22, height: 22,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : const Text('Create Product'),
+                      : Text(_isEditing ? 'Update Product' : 'Create Product'),
                 ),
               ),
             ],
@@ -271,33 +382,56 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Widget _buildSizeCard(int index, _SizeEntry size) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(size.nameCtrl.text,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                  child: Text('Size: ${size.nameCtrl.text}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary, fontSize: 13)),
                 ),
                 const Spacer(),
-                InkWell(
-                  onTap: () => _removeSize(index),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.error.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
+                if (_sizes.length > 1)
+                  InkWell(
+                    onTap: () => _removeSize(index),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(Icons.close, size: 16, color: AppTheme.error),
                     ),
-                    child: const Icon(Icons.close, size: 16, color: AppTheme.error),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: size.mrpCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration('MRP *'),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: size.salesPriceCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration('Sales Price *'),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                   ),
                 ),
               ],
@@ -307,19 +441,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
               children: [
                 Expanded(
                   child: TextFormField(
-                    controller: size.mrpCtrl,
+                    controller: size.stockCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: _inputDecoration('MRP'),
+                    decoration: _inputDecoration('Stock *'),
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
-                    controller: size.salesPriceCtrl,
+                    controller: size.lowStockCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: _inputDecoration('Sales Price'),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                    decoration: _inputDecoration('Low Stock Threshold'),
                   ),
                 ),
               ],
@@ -339,7 +472,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
   }
 

@@ -63,23 +63,6 @@ class ProfileScreen extends StatelessWidget {
             _infoTile(Icons.description_outlined, 'GST', user.gstNumber!),
           if (user?.address != null && user!.address!.isNotEmpty)
             _infoTile(Icons.location_on_outlined, 'Address', user.address!),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => auth.logout(),
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Sign Out'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.error,
-                side: const BorderSide(color: AppTheme.error),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

@@ -19,12 +19,25 @@ class AuthService {
       if (res.statusCode == 200 && body['success'] == true) {
         final loginRes = LoginResponse.fromJson(body['data'] as Map<String, dynamic>);
         await _api.saveTokens(loginRes.accessToken, loginRes.refreshToken);
+        await _api.saveCredentials(email, password);
         return ApiResponse(success: true, data: loginRes);
       }
 
+      final rawMessage = body['message'] as String?;
+      final rawErrors = body['errors'];
+      String message;
+      if (rawErrors is Map) {
+        message = (rawErrors as Map<String, dynamic>).entries
+            .map((e) => (e.value as List).join('; '))
+            .join('\n');
+      } else if (rawMessage != null && rawMessage != 'Validation failed') {
+        message = rawMessage;
+      } else {
+        message = 'Invalid email or password';
+      }
       return ApiResponse(
         success: false,
-        message: body['message'] as String? ?? 'Invalid credentials',
+        message: message,
         error: body['error'] as String?,
       );
     } catch (e) {
@@ -49,11 +62,11 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    await _api.clearCredentials();
     await _api.clearTokens();
   }
 
   Future<bool> isLoggedIn() async {
-    final token = await _api.accessToken;
-    return token != null && token.isNotEmpty;
+    return _api.isLoggedIn;
   }
 }

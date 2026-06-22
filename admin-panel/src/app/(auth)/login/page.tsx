@@ -74,7 +74,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
             <Store className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Mufar Commerce</CardTitle>
+          <CardTitle className="text-2xl">Central Enterprises</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>

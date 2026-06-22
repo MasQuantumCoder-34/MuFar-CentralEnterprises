@@ -70,7 +70,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     }
   }
 
-  int get _lowStockCount => _products.where((p) => p.stockQuantity <= p.lowStockThreshold).length;
+  int get _lowStockCount => _products.where((p) => p.totalStock <= p.lowStockThresholdFallback).length;
 
   Future<void> _adjustStock(Product product, {required bool isIn}) async {
     final qtyCtrl = TextEditingController();
@@ -86,7 +86,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${product.name} — Current stock: ${product.stockQuantity}', style: const TextStyle(fontSize: 13)),
+              Text('${product.name} — Total stock: ${product.totalStock}', style: const TextStyle(fontSize: 13)),
               const SizedBox(height: 12),
               TextFormField(
                 controller: qtyCtrl,
@@ -178,7 +178,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
             child: Row(children: [
               const Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 20),
               const SizedBox(width: 8),
-              Text('$_lowStockCount product(s) below threshold', style: const TextStyle(color: AppTheme.error, fontWeight: FontWeight.w600, fontSize: 13)),
+              Flexible(child: Text('$_lowStockCount product(s) below threshold', overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.error, fontWeight: FontWeight.w600, fontSize: 13))),
             ]),
           ),
         Padding(
@@ -203,7 +203,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                       itemCount: _products.length,
                       itemBuilder: (_, i) {
                         final p = _products[i];
-                        final isLow = p.stockQuantity <= p.lowStockThreshold;
+                        final isLow = p.totalStock <= p.lowStockThresholdFallback;
                         return Card(
                           margin: const EdgeInsets.only(bottom: 6),
                           child: Padding(
@@ -223,8 +223,8 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                                   ]),
                                 ),
                                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                                  Text('${p.stockQuantity}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isLow ? AppTheme.error : AppTheme.textPrimary)),
-                                  Text(isLow ? (p.stockQuantity == 0 ? 'Out of Stock' : 'Low Stock') : 'In Stock',
+                                  Text('${p.totalStock}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isLow ? AppTheme.error : AppTheme.textPrimary)),
+                                  Text(isLow ? (p.totalStock == 0 ? 'Out of Stock' : 'Low Stock') : 'In Stock',
                                       style: TextStyle(fontSize: 10, color: isLow ? AppTheme.error : AppTheme.success, fontWeight: FontWeight.w600)),
                                 ]),
                                 const SizedBox(width: 8),

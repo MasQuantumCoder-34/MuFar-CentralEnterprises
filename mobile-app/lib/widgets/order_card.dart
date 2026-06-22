@@ -44,7 +44,7 @@ class OrderCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              order.orderNumber,
+                              order.clientName ?? order.orderNumber,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
@@ -57,7 +57,7 @@ class OrderCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${order.items.length} item${order.items.length == 1 ? '' : 's'}',
+                        '${order.orderNumber} · ${order.items.length} item${order.items.length == 1 ? '' : 's'}',
                         style: const TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
@@ -66,12 +66,15 @@ class OrderCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Text(
-                            '₹${order.total.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              color: AppTheme.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          Flexible(
+                            child: Text(
+                              '₹${order.total.toStringAsFixed(0)}',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                           if (date.isNotEmpty) ...[
@@ -79,9 +82,12 @@ class OrderCard extends StatelessWidget {
                             Icon(Icons.calendar_today_outlined,
                                 size: 11, color: AppTheme.textTertiary),
                             const SizedBox(width: 3),
-                            Text(date,
-                                style: const TextStyle(
-                                    color: AppTheme.textTertiary, fontSize: 11)),
+                            Flexible(
+                              child: Text(date,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      color: AppTheme.textTertiary, fontSize: 11)),
+                            ),
                           ],
                         ],
                       ),

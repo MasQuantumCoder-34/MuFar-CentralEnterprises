@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+
 import '../../models/product.dart';
 import '../../models/category.dart';
 import '../../models/user.dart';
@@ -19,8 +20,6 @@ class CreateOrderScreen extends StatefulWidget {
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final ApiClient _api = ApiClient();
   final List<_CartItem> _cart = [];
-  final Map<String, String?> _selectedSizes = {};
-
   int _step = 1;
 
   List<User> _clients = [];
@@ -31,7 +30,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   bool _loadingClients = true;
   bool _loadingCategories = false;
   bool _loadingProducts = false;
+  bool _placingOrder = false;
   String _clientSearch = '';
+  bool _productsError = false;
 
   @override
   void initState() {
@@ -76,6 +77,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _loadProducts(String categoryId) async {
     setState(() => _loadingProducts = true);
+    _productsError = false;
     try {
       final res = await _api.get(
         ApiEndpoints.products,
@@ -83,23 +85,19 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       );
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       if (body['success'] == true && body['data'] != null) {
+        final list = body['data'] as List;
         setState(() {
-          _products = (body['data'] as List)
+          _products = list
               .map((e) => Product.fromJson(e as Map<String, dynamic>))
               .toList();
         });
+      } else {
+        _productsError = true;
       }
-    } catch (_) {}
-    if (mounted) setState(() => _loadingProducts = false);
-  }
-
-  String _stepLabel(int s) {
-    switch (s) {
-      case 1: return 'Select Client';
-      case 2: return 'Select Category';
-      case 3: return 'Select Products';
-      default: return '';
+    } catch (_) {
+      _productsError = true;
     }
+    if (mounted) setState(() => _loadingProducts = false);
   }
 
   void _addToCart(Product product, String? size) {
@@ -132,6 +130,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _placeOrder() async {
     if (_cart.isEmpty) return;
+    setState(() => _placingOrder = true);
     try {
       final body = <String, dynamic>{
         'items': _cart.map((c) => {
@@ -145,20 +144,54 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       final res = await _api.post(ApiEndpoints.orders, body: body);
       final resp = jsonDecode(res.body) as Map<String, dynamic>;
       if (resp['success'] == true) {
+        final orderData = resp['data'] as Map<String, dynamic>?;
+        setState(() => _placingOrder = false);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Order placed successfully!'),
-            backgroundColor: AppTheme.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        setState(() {
-          _cart.clear();
-          _selectedClient = null;
-          _selectedCategory = null;
-          _step = 1;
+        final orderNumber = orderData?['orderNumber']?.toString() ?? '';
+        final clientName = _selectedClient?.displayName ?? '';
+        final total = _cartTotal;
+        final itemCount = _cart.length;
+        _resetForm();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: AppTheme.success, size: 24),
+                  const SizedBox(width: 8),
+                  const Text('Order Created'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _detailRow('Order No', orderNumber),
+                  if (clientName.isNotEmpty) _detailRow('Client', clientName),
+                  _detailRow('Total', '₹${total.toStringAsFixed(0)}'),
+                  _detailRow('Items', '$itemCount'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _resetForm();
+                  },
+                  child: const Text('Create Another'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Done'),
+                ),
+              ],
+            ),
+          );
         });
       } else {
         if (!mounted) return;
@@ -169,6 +202,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        setState(() => _placingOrder = false);
       }
     } catch (e) {
       if (!mounted) return;
@@ -179,17 +213,37 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      setState(() => _placingOrder = false);
     }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _cart.clear();
+      _selectedClient = null;
+      _selectedCategory = null;
+      _products = [];
+      _step = 1;
+      _productsError = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Order')),
+      appBar: AppBar(
+        title: const Text('Create Order'),
+        leading: _step > 1
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _step--),
+              )
+            : null,
+      ),
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             color: AppTheme.surface,
             child: Row(
               children: [
@@ -231,7 +285,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final c = _cart[i];
-                        final price = c.product.getPriceForSize(c.size);
                         return Container(
                           width: 160,
                           padding: const EdgeInsets.all(8),
@@ -327,11 +380,16 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: _placeOrder,
+                        onPressed: _placingOrder ? null : _placeOrder,
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(140, 46),
                         ),
-                        child: const Text('Place Order'),
+                        child: _placingOrder
+                            ? const SizedBox(
+                                height: 20, width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Text('Create Order'),
                       ),
                     ],
                   ),
@@ -369,11 +427,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           ),
           if (step < 3) ...[
             const SizedBox(width: 4),
-            Text(_stepLabel(step),
-                style: TextStyle(
-                    fontSize: isCurrent ? 12 : 11,
-                    fontWeight: isCurrent ? FontWeight.w600 : null,
-                    color: isCurrent ? AppTheme.textPrimary : AppTheme.textTertiary)),
+            Flexible(
+              child: Text(_stepLabel(step),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: isCurrent ? 12 : 11,
+                      fontWeight: isCurrent ? FontWeight.w600 : null,
+                      color: isCurrent ? AppTheme.textPrimary : AppTheme.textTertiary)),
+            ),
           ],
         ],
       ),
@@ -386,6 +448,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       color: AppTheme.border,
       margin: const EdgeInsets.only(bottom: 16),
     );
+  }
+
+  String _stepLabel(int s) {
+    switch (s) {
+      case 1: return 'Select Client';
+      case 2: return 'Select Category';
+      case 3: return 'Select Products';
+      default: return '';
+    }
   }
 
   Widget _buildStepContent() {
@@ -478,7 +549,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                       color: AppTheme.primary)
                                   : null,
                               onTap: () {
-                                setState(() => _selectedClient = client);
+                                setState(() {
+                                  _selectedClient = client;
+                                  _step = 2;
+                                });
                               },
                             ),
                           );
@@ -486,19 +560,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       ),
                     ),
         ),
-        if (_selectedClient != null)
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => setState(() => _step = 2),
-                  child: const Text('Next: Select Category'),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -528,9 +589,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         children: [
                           const Icon(Icons.person, size: 16, color: AppTheme.textTertiary),
                           const SizedBox(width: 6),
-                          Text('Client: ${_selectedClient!.displayName}',
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppTheme.textSecondary)),
+                          Flexible(
+                            child: Text('Client: ${_selectedClient!.displayName}',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 12, color: AppTheme.textSecondary)),
+                          ),
                         ],
                       ),
                     ),
@@ -539,7 +603,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       padding: const EdgeInsets.all(16),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 1.4,
+                        childAspectRatio: 1.0,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                       ),
@@ -551,7 +615,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           color: Colors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () => setState(() => _selectedCategory = cat),
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory = cat;
+                                _step = 3;
+                              });
+                              _loadProducts(cat.id);
+                            },
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isSelected
@@ -566,27 +636,29 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    width: 48, height: 48,
-                                    decoration: BoxDecoration(
-                                      color: (isSelected ? AppTheme.primary : AppTheme.textTertiary)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.category_outlined,
-                                      color: isSelected ? AppTheme.primary : AppTheme.textTertiary,
-                                      size: 24,
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: SizedBox(
+                                      width: 64, height: 64,
+                                      child: cat.image != null && cat.image!.isNotEmpty
+                                          ? Image.network(cat.image!, fit: BoxFit.cover, width: 64, height: 64, errorBuilder: (_, __, ___) => const Icon(Icons.image_outlined, size: 28, color: AppTheme.textTertiary))
+                                          : const Icon(Icons.image_outlined, size: 28, color: AppTheme.textTertiary),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(cat.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
                                         fontSize: 13,
                                       ),
                                       textAlign: TextAlign.center),
+                                  if (cat.productCount != null)
+                                    Text('${cat.productCount} products',
+                                        style: const TextStyle(
+                                            fontSize: 10, color: AppTheme.textSecondary)),
                                 ],
                               ),
                             ),
@@ -595,37 +667,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       },
                     ),
                   ),
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                      child: Row(
-                        children: [
-                          OutlinedButton(
-                            onPressed: () => setState(() => _step = 1),
-                            child: const Text('Back'),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _selectedCategory != null
-                                  ? () {
-                                      setState(() => _step = 3);
-                                      _loadProducts(_selectedCategory!.id);
-                                    }
-                                  : null,
-                              child: const Text('Next: Select Products'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               );
   }
 
   Widget _buildProductsStep() {
-    if (_selectedCategory == null) return const SizedBox();
     return Column(
       children: [
         if (_selectedCategory != null)
@@ -633,71 +679,297 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Category: ${_selectedCategory!.name}',
+              '${_selectedCategory!.name} — ${_products.length} products',
               style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
             ),
           ),
         Expanded(
           child: _loadingProducts
               ? const LoadingWidget()
-              : _products.isEmpty
+              : _productsError
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.inventory_2_outlined,
-                              size: 48, color: AppTheme.textTertiary),
+                          Icon(Icons.cloud_off, size: 48, color: AppTheme.error),
                           const SizedBox(height: 12),
-                          const Text('No products in this category',
+                          const Text('Failed to load products',
                               style: TextStyle(color: AppTheme.textSecondary)),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => _loadProducts(_selectedCategory!.id),
+                            child: const Text('Retry'),
+                          ),
                         ],
                       ),
                     )
-                  : GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.75,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: _products.length,
-                      itemBuilder: (_, i) {
-                        final product = _products[i];
-                        final selSize = _selectedSizes[product.id];
-                        return ProductCard(
-                          product: product,
-                          selectedSize: selSize,
-                          onSizeSelected: (s) =>
-                              setState(() => _selectedSizes[product.id] = s),
-                          onAdd: _addToCart,
-                        );
-                      },
-                    ),
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Row(
-              children: [
-                OutlinedButton(
-                  onPressed: () => setState(() => _step = 2),
-                  child: const Text('Back'),
-                ),
-                const SizedBox(width: 12),
-                if (_cart.isNotEmpty)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _placeOrder,
-                      icon: const Icon(Icons.shopping_cart_checkout, size: 18),
-                      label: Text('Place Order (₹${_cartTotal.toStringAsFixed(0)})'),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+                  : _products.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 48, color: AppTheme.textTertiary),
+                              const SizedBox(height: 12),
+                              const Text('No products in this category',
+                                  style: TextStyle(color: AppTheme.textSecondary)),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
+                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.78,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                          itemCount: _products.length,
+                          itemBuilder: (_, i) {
+                            final product = _products[i];
+                            return ProductCard(
+                              product: product,
+                              onTap: () => _showProductSheet(product),
+                            );
+                          },
+                        ),
         ),
       ],
+    );
+  }
+
+  void _showProductSheet(Product product) {
+    String? selectedSize;
+    int qty = 1;
+    final hasSizes = product.sizes.isNotEmpty;
+    final isOutOfStock = product.totalStock <= 0;
+    final price = product.getPriceForSize(null);
+    final mrp = product.getMrpForSize(null);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final currentPrice = selectedSize != null
+              ? product.getPriceForSize(selectedSize)
+              : price;
+          final currentMrp = selectedSize != null
+              ? product.getMrpForSize(selectedSize)
+              : mrp;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 4, width: 40,
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    child: AspectRatio(
+                      aspectRatio: 1.4,
+                      child: Container(
+                        color: AppTheme.surfaceVariant,
+                        child: product.images.isNotEmpty
+                            ? Image.network(product.images.first, fit: BoxFit.cover, width: double.infinity, height: double.infinity, errorBuilder: (_, __, ___) => const Icon(Icons.image_outlined, color: AppTheme.textTertiary, size: 48))
+                            : const Icon(Icons.image_outlined, color: AppTheme.textTertiary, size: 48),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(product.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text('₹${currentPrice.toStringAsFixed(0)}',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                            ),
+                            if (currentMrp > currentPrice) ...[
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text('₹${currentMrp.toStringAsFixed(0)}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontSize: 16, color: AppTheme.textTertiary,
+                                        decoration: TextDecoration.lineThrough)),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('${((currentMrp - currentPrice) / currentMrp * 100).round()}% off',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: AppTheme.accent, fontWeight: FontWeight.w600)),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(product.sizes.map((s) => '${s.name}:${s.stockQuantity}').join('  '),
+                            maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 12, color: product.totalStock <= 0
+                                    ? AppTheme.error : AppTheme.textSecondary)),
+                        if (hasSizes) ...[
+                          const SizedBox(height: 16),
+                          const Text('Select Size',
+                              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8, runSpacing: 8,
+                            children: product.sizes.map((s) {
+                              final isSel = selectedSize == s.name;
+                              return GestureDetector(
+                                onTap: () => setSheetState(() => selectedSize = isSel ? null : s.name),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: isSel ? AppTheme.primary : AppTheme.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSel ? AppTheme.primary : AppTheme.border,
+                                    ),
+                                  ),
+                                  child: Text(s.name,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: isSel ? Colors.white : AppTheme.textPrimary)),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                        if (!isOutOfStock) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: AppTheme.border),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    InkWell(
+                                      onTap: qty > 1 ? () => setSheetState(() => qty--) : null,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Icon(Icons.remove,
+                                            size: 20, color: qty > 1 ? AppTheme.textPrimary : AppTheme.textTertiary),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        border: Border.symmetric(
+                                          horizontal: BorderSide(color: AppTheme.border),
+                                        ),
+                                      ),
+                                      child: Text('$qty',
+                                          style: const TextStyle(
+                                              fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                                    ),
+                                    InkWell(
+                                      onTap: qty < product.totalStock
+                                          ? () => setSheetState(() => qty++)
+                                          : null,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Icon(Icons.add,
+                                            size: 20, color: qty < product.totalStock
+                                                ? AppTheme.textPrimary : AppTheme.textTertiary),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              Text('₹${(currentPrice * qty).toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                      fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: isOutOfStock || (hasSizes && selectedSize == null)
+                                ? null
+                                : () {
+                                    for (var i = 0; i < qty; i++) {
+                                      _addToCart(product, selectedSize);
+                                    }
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Added $qty × ${product.name} to cart'),
+                                        behavior: SnackBarBehavior.floating,
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.accent,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: AppTheme.border,
+                              disabledForegroundColor: AppTheme.textTertiary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            child: Text(
+                              isOutOfStock ? 'Out of Stock'
+                                  : hasSizes && selectedSize == null ? 'Select a Size'
+                                  : 'Add to Cart — ₹${(currentPrice * qty).toStringAsFixed(0)}',
+                            ),
+                          ),
+                        ),
+                        if (isOutOfStock)
+                          const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14))),
+          const SizedBox(width: 12),
+          Flexible(child: Text(value, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+        ],
+      ),
     );
   }
 }

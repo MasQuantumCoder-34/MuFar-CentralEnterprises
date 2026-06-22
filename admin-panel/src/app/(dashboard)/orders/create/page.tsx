@@ -234,7 +234,7 @@ export default function CreateOrderPage() {
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-accent'
                     }`}
-                    onClick={() => setSelectedClientId(client._id)}
+                    onClick={() => { setSelectedClientId(client._id); setStep('category'); }}
                   >
                     <div>
                       <p className="font-medium text-sm">{client.storeName || client.name}</p>
@@ -247,14 +247,6 @@ export default function CreateOrderPage() {
                 ))
               )}
             </div>
-            <Button
-              className="w-full"
-              disabled={!selectedClientId}
-              onClick={() => setStep('category')}
-            >
-              Next: Select Category
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
           </CardContent>
         </Card>
       )}
@@ -287,7 +279,7 @@ export default function CreateOrderPage() {
                         ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                         : 'hover:border-primary/50 hover:shadow-sm'
                     }`}
-                    onClick={() => setSelectedCategoryId(cat._id)}
+                    onClick={() => { setSelectedCategoryId(cat._id); setStep('products'); }}
                   >
                     <div className="w-16 h-16 mx-auto rounded-lg overflow-hidden bg-muted flex items-center justify-center mb-2">
                       {cat.image ? (
@@ -304,17 +296,9 @@ export default function CreateOrderPage() {
                 ))}
               </div>
             )}
-            <div className="flex gap-2 mt-4">
+            <div className="flex mt-4">
               <Button variant="outline" onClick={() => setStep('client')}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button
-                className="flex-1"
-                disabled={!selectedCategoryId}
-                onClick={() => setStep('products')}
-              >
-                Next: Select Products
-                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </CardContent>

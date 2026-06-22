@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../models/category.dart';
 import '../../services/api_client.dart';
 import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
 
 class AddCategoryScreen extends StatefulWidget {
-  const AddCategoryScreen({super.key});
+  final Category? category;
+  const AddCategoryScreen({super.key, this.category});
 
   @override
   State<AddCategoryScreen> createState() => _AddCategoryScreenState();
@@ -17,16 +21,30 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  final _imageCtrl = TextEditingController();
   final _sortOrderCtrl = TextEditingController(text: '0');
+  String? _imagePath;
+  String? _imageUrl;
+  bool _uploadingImage = false;
 
   bool _loading = false;
+  bool get _isEditing => widget.category != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditing) {
+      final c = widget.category!;
+      _nameCtrl.text = c.name;
+      _descCtrl.text = c.description ?? '';
+      _sortOrderCtrl.text = c.sortOrder.toString();
+      if (c.image != null && c.image!.isNotEmpty) _imageUrl = c.image;
+    }
+  }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _descCtrl.dispose();
-    _imageCtrl.dispose();
     _sortOrderCtrl.dispose();
     super.dispose();
   }
@@ -39,16 +57,18 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
         'name': _nameCtrl.text.trim(),
       };
       if (_descCtrl.text.trim().isNotEmpty) body['description'] = _descCtrl.text.trim();
-      if (_imageCtrl.text.trim().isNotEmpty) body['image'] = _imageCtrl.text.trim();
+      if (_imageUrl != null && _imageUrl!.isNotEmpty) body['image'] = _imageUrl;
       body['sortOrder'] = int.tryParse(_sortOrderCtrl.text.trim()) ?? 0;
 
-      final res = await _api.post(ApiEndpoints.categories, body: body);
+      final res = _isEditing
+          ? await _api.put('/categories/${widget.category!.id}', body: body)
+          : await _api.post(ApiEndpoints.categories, body: body);
       final resp = jsonDecode(res.body) as Map<String, dynamic>;
       if (resp['success'] == true) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Category created successfully'),
+          SnackBar(
+            content: Text(_isEditing ? 'Category updated successfully' : 'Category created successfully'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -78,10 +98,38 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1024);
+    if (picked != null) {
+      setState(() => _imagePath = picked.path);
+      _uploadImage();
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    if (_imagePath == null) return;
+    setState(() => _uploadingImage = true);
+    try {
+      final res = await _api.uploadFiles(ApiEndpoints.upload, [
+        MapEntry('images', _imagePath!),
+      ]);
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (body['success'] == true && body['data'] != null) {
+        final data = body['data'] as Map<String, dynamic>;
+        final urls = (data['urls'] as List).cast<String>();
+        if (urls.isNotEmpty) {
+          setState(() => _imageUrl = urls.first);
+        }
+      }
+    } catch (_) {}
+    setState(() => _uploadingImage = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Category')),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit Category' : 'Add Category')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -90,7 +138,50 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
             children: [
               _buildField('Category Name *', _nameCtrl, required: true),
               _buildField('Description', _descCtrl, maxLines: 3),
-              _buildField('Image URL', _imageCtrl),
+              const Text('Category Image', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _uploadingImage ? null : _pickImage,
+                child: Container(
+                  width: double.infinity,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: _imagePath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.file(File(_imagePath!), fit: BoxFit.cover),
+                              if (_uploadingImage)
+                                Container(
+                                  color: Colors.black38,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(color: Colors.white),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(_imageUrl != null ? Icons.check_circle : Icons.add_photo_alternate_outlined,
+                                size: 36, color: _imageUrl != null ? AppTheme.success : AppTheme.textTertiary),
+                            const SizedBox(height: 8),
+                            Text(
+                              _imageUrl != null ? 'Image uploaded' : 'Tap to pick image',
+                              style: TextStyle(fontSize: 13, color: _imageUrl != null ? AppTheme.success : AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 12),
               _buildField('Sort Order', _sortOrderCtrl, keyboardType: TextInputType.number),
               const SizedBox(height: 24),
               SizedBox(
@@ -105,7 +196,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                           width: 22, height: 22,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : const Text('Create Category'),
+                      : Text(_isEditing ? 'Update Category' : 'Create Category'),
                 ),
               ),
             ],

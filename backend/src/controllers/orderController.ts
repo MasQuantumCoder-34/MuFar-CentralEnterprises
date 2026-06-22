@@ -62,7 +62,6 @@ const getOrders = async (req: AuthRequest, res: Response, next: NextFunction): P
 
     const orders = await Order.find(filter)
       .populate('client', 'storeName ownerName email mobile')
-      .populate('items.product', 'name images')
       .sort(sortObj)
       .skip((page - 1) * limit)
       .limit(limit);
@@ -353,6 +352,7 @@ const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunc
 const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { items, notes } = req.body;
+    let skipped: string[] = [];
 
     const order = await Order.findById(req.params.id);
 
@@ -384,35 +384,24 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
     if (items) {
       const orderItems: any[] = [];
       let subtotal = 0;
+      skipped = [];
 
       for (const item of items) {
         const product = await Product.findById(item.product);
 
         if (!product) {
-          res.status(404).json({
-            success: false,
-            message: `Product ${item.product} not found`,
-            error: 'Not Found',
-          });
-          return;
+          skipped.push(`${item.product} (deleted)`);
+          continue;
         }
 
         if (!product.isActive) {
-          res.status(400).json({
-            success: false,
-            message: `Product ${product.name} is not active`,
-            error: 'Bad Request',
-          });
-          return;
+          skipped.push(`${product.name} (inactive)`);
+          continue;
         }
 
         if (product.stockQuantity < item.quantity) {
-          res.status(400).json({
-            success: false,
-            message: `Insufficient stock for ${product.name}. Available: ${product.stockQuantity}`,
-            error: 'Bad Request',
-          });
-          return;
+          skipped.push(`${product.name} (insufficient stock)`);
+          continue;
         }
 
         const { salesPrice: itemPrice } = getSizePrice(product, item.size);
@@ -428,6 +417,10 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
           total,
           size: item.size || undefined,
         });
+      }
+
+      if (skipped.length > 0) {
+        console.warn(`Update order ${order.orderNumber}: skipped items - ${skipped.join(', ')}`);
       }
 
       if (order.status === OrderStatus.PROCESSING) {
@@ -472,9 +465,10 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
       .populate('client', 'storeName ownerName email mobile')
       .populate('items.product', 'name images');
 
+    const skippedMsg = skipped.length > 0 ? ` ${skipped.length} item(s) skipped (no longer available).` : '';
     res.status(200).json({
       success: true,
-      message: 'Order updated successfully',
+      message: 'Order updated successfully' + skippedMsg,
       data: populatedOrder,
     });
   } catch (error) {
@@ -495,7 +489,6 @@ const getMyOrders = async (req: AuthRequest, res: Response, next: NextFunction):
     const totalPages = Math.ceil(total / limit);
 
     const orders = await Order.find(filter)
-      .populate('items.product', 'name images')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);

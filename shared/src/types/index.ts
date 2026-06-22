@@ -47,6 +47,8 @@ export interface IProductSize {
   name: string;
   mrp: number;
   salesPrice: number;
+  stockQuantity: number;
+  lowStockThreshold: number;
 }
 
 export interface IProduct {

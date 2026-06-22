@@ -8,6 +8,8 @@ const productSizeSchema = new Schema(
     name: { type: String, required: true },
     mrp: { type: Number, required: true, min: 0 },
     salesPrice: { type: Number, required: true, min: 0 },
+    stockQuantity: { type: Number, required: true, min: 0, default: 0 },
+    lowStockThreshold: { type: Number, default: 10 },
   },
   { _id: false }
 );

@@ -156,7 +156,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Download the Mufar Central Enterprises mobile app for Android.
+            Download the Central Enterprises mobile app for Android.
             Manage orders, browse products, and stay connected on the go.
           </p>
           <div className="flex flex-col gap-2">

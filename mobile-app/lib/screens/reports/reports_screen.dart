@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/api_client.dart';
-import '../../services/api_endpoints.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
 
@@ -177,9 +176,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         padding: const EdgeInsets.all(10),
                         child: Row(children: [
                           Expanded(child: Text(d['period'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-                          Text('${d['orders'] ?? 0} orders', style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
-                          const SizedBox(width: 12),
-                          Text('₹${(d['totalRevenue'] as num?)?.toDouble() ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primary)),
+                          Flexible(child: Text('${d['orders'] ?? 0} orders', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary))),
+                          const SizedBox(width: 8),
+                          Flexible(child: Text('₹${(d['totalRevenue'] as num?)?.toDouble() ?? 0}', overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primary))),
                         ]),
                       ),
                     );

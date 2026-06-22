@@ -35,12 +35,10 @@ class _CancelOrderScreenState extends State<CancelOrderScreen> {
       if (body['success'] == true && body['data'] != null) {
         setState(() {
           _orders = (body['data'] as List).map((e) => Order.fromJson(e as Map<String, dynamic>)).toList();
-          _loading = false;
         });
       }
-    } catch (_) {
-      setState(() => _loading = false);
-    }
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _cancelOrder(Order order) async {
@@ -116,8 +114,8 @@ class _CancelOrderScreenState extends State<CancelOrderScreen> {
                           padding: const EdgeInsets.all(12),
                           child: Row(children: [
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(order.orderNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              if (order.clientName != null) Text(order.clientName!, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                              Text(order.clientName ?? order.orderNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              if (order.clientName != null) Text(order.orderNumber, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                               Text('₹${order.total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11, color: AppTheme.textTertiary)),
                             ])),
                             StatusBadge(status: order.status),

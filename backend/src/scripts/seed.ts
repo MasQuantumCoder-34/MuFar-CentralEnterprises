@@ -11,7 +11,7 @@ async function seed() {
     const adminExists = await User.findOne({ email: 'admin@mufar.com' });
     if (!adminExists) {
       await User.create({
-        storeName: 'Mufar Technologies',
+        storeName: 'Central Enterprises',
         ownerName: 'Super Admin',
         name: 'Super Admin',
         email: 'admin@mufar.com',
@@ -30,10 +30,10 @@ async function seed() {
     const settingsExist = await Settings.findOne();
     if (!settingsExist) {
       await Settings.create({
-        companyName: 'Mufar Commerce',
+        companyName: 'Central Enterprises',
         contactNumber: '9999999999',
         email: 'admin@mufar.com',
-        address: 'Mufar Technologies HQ',
+        address: 'Central Enterprises HQ',
         gstNumber: 'GSTIN123456',
         invoicePrefix: 'INV',
         lowStockThreshold: 10,

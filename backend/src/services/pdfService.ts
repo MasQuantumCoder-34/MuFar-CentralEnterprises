@@ -14,7 +14,7 @@ const generateInvoicePDF = async (order: IOrder, company: ISettings): Promise<Bu
       const pageWidth = doc.page.width - 100;
       const leftMargin = 50;
 
-      doc.font('Helvetica-Bold').fontSize(20).text(company.companyName || 'Mufar Commerce', leftMargin, 50);
+      doc.font('Helvetica-Bold').fontSize(20).text(company.companyName || 'Central Enterprises', leftMargin, 50);
       doc.font('Helvetica').fontSize(10).text(company.address || '', leftMargin, 75);
       doc.text(`Phone: ${company.contactNumber || ''}`, leftMargin, 90);
       doc.text(`Email: ${company.email || ''}`, leftMargin, 105);
