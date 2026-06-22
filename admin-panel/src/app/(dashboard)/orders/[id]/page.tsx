@@ -42,6 +42,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -61,6 +62,7 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', id],
@@ -103,6 +105,19 @@ export default function OrderDetailPage() {
       toast.success('Order cancelled');
       setShowCancelDialog(false);
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/orders/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast.success('Order deleted');
+      setShowDeleteDialog(false);
+      router.push('/orders');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to delete order'),
   });
 
   const handleStatusUpdate = (data: StatusUpdateForm) => {
@@ -250,6 +265,17 @@ export default function OrderDetailPage() {
                   Cancel Order
                 </Button>
               )}
+              {(currentStatus === 'pending' || currentStatus === 'cancelled') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 w-full text-destructive border-destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Order
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -331,6 +357,15 @@ export default function OrderDetailPage() {
         confirmLabel="Cancel Order"
         onConfirm={() => cancelMutation.mutate()}
         loading={cancelMutation.isPending}
+      />
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Order"
+        description={`Are you sure you want to permanently delete order ${order.orderNumber}? This cannot be undone.`}
+        confirmLabel="Delete Order"
+        onConfirm={() => deleteMutation.mutate()}
+        loading={deleteMutation.isPending}
       />
     </div>
   );

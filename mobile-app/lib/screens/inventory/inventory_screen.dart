@@ -40,16 +40,16 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
   Future<void> _loadProducts() async {
     setState(() => _loadingProducts = true);
     try {
-      final params = <String, String>{'limit': '100'};
+      final params = <String, String>{'limit': '100', 'isActive': 'true'};
       if (_search.isNotEmpty) params['search'] = _search;
       final res = await _api.get(ApiEndpoints.products, queryParams: params);
       final body = jsonDecode(res.body) as Map<String, dynamic>;
-      if (body['success'] == true && body['data'] != null) {
-        setState(() {
+      setState(() {
+        if (body['success'] == true && body['data'] != null) {
           _products = (body['data'] as List).map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
-          _loadingProducts = false;
-        });
-      }
+        }
+        _loadingProducts = false;
+      });
     } catch (_) {
       setState(() => _loadingProducts = false);
     }
@@ -59,12 +59,12 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     try {
       final res = await _api.get('/inventory/logs', queryParams: {'limit': '50'});
       final body = jsonDecode(res.body) as Map<String, dynamic>;
-      if (body['success'] == true && body['data'] != null) {
-        setState(() {
+      setState(() {
+        if (body['success'] == true && body['data'] != null) {
           _logs = (body['data'] as List).map((e) => e as Map<String, dynamic>).toList();
-          _loadingLogs = false;
-        });
-      }
+        }
+        _loadingLogs = false;
+      });
     } catch (_) {
       setState(() => _loadingLogs = false);
     }
@@ -226,9 +226,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                         final p = _products[i];
                         final isLow = p.totalStock <= p.lowStockThresholdFallback;
                         return Card(
-                          margin: const EdgeInsets.only(bottom: 6),
+                          margin: const EdgeInsets.only(bottom: 8),
                           child: Padding(
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(12),
                             child: Row(
                               children: [
                                 Container(
@@ -286,7 +286,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                 itemBuilder: (_, i) {
                   final log = _logs[i];
                   return Card(
-                    margin: const EdgeInsets.only(bottom: 6),
+                    margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       leading: Container(
                         width: 36, height: 36,
