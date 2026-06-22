@@ -23,8 +23,8 @@ export const ACCOUNT_LOCK = {
 };
 
 export const ORDER_STATUS_FLOW: Record<string, string[]> = {
-  pending: ['processing', 'cancelled'],
-  processing: ['out_for_delivery', 'delivered', 'cancelled'],
+  pending: ['delivered', 'cancelled'],
+  processing: ['delivered', 'cancelled'],
   out_for_delivery: ['delivered'],
   delivered: [],
   cancelled: [],
