@@ -688,8 +688,10 @@ const deleteOrder = async (req: AuthRequest, res: Response, next: NextFunction):
     await ActivityLog.create({
       user: req.user?._id,
       action: ActivityAction.DELETE,
+      resource: 'Order',
+      resourceId: String(order._id),
       details: `Order ${order.orderNumber} deleted by ${req.user?.email}`,
-      ip: req.ip,
+      ipAddress: req.ip,
     });
 
     await Order.findByIdAndDelete(req.params.id);
