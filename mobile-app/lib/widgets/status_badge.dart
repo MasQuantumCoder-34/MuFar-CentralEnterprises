@@ -34,10 +34,10 @@ class StatusBadge extends StatelessWidget {
     switch (status) {
       case 'pending':
         return _StatusConfig(AppTheme.warning, 'Pending');
-      case 'processing':
-        return _StatusConfig(AppTheme.primaryLight, 'Processing');
-      case 'out_for_delivery':
-        return _StatusConfig(AppTheme.primary, 'Out for Delivery');
+      // case 'processing':
+      //   return _StatusConfig(AppTheme.primaryLight, 'Processing');
+      // case 'out_for_delivery':
+      //   return _StatusConfig(AppTheme.primary, 'Out for Delivery');
       case 'delivered':
         return _StatusConfig(AppTheme.success, 'Delivered');
       case 'cancelled':

@@ -6,8 +6,8 @@ const statusMap: Record<
   { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' }
 > = {
   pending: { label: 'Pending', variant: 'warning' },
-  processing: { label: 'Processing', variant: 'info' },
-  out_for_delivery: { label: 'Out for Delivery', variant: 'default' },
+  // processing: { label: 'Processing', variant: 'info' },
+  // out_for_delivery: { label: 'Out for Delivery', variant: 'default' },
   delivered: { label: 'Delivered', variant: 'success' },
   cancelled: { label: 'Cancelled', variant: 'destructive' },
 };
