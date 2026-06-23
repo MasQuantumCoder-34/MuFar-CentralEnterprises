@@ -316,7 +316,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: DropdownButtonFormField<String>(
                     value: _selectedCategoryId,
+                    isExpanded: true,
+                    dropdownColor: AppTheme.surface,
                     decoration: _inputDecoration('Category *'),
+                    hint: const Text('Select category', style: TextStyle(color: AppTheme.textTertiary, fontSize: 14)),
                     items: _categories
                         .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                         .toList(),
