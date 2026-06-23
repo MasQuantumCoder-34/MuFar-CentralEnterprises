@@ -62,12 +62,31 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
     if (confirmed != true) return;
     try {
-      await _api.delete('/categories/${cat.id}');
-      _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Category deleted'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating,
-      ));
-    } catch (_) {}
+      final res = await _api.delete('/categories/${cat.id}');
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        _load();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Category deleted'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating,
+          ));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(body['message'] as String? ?? 'Failed to delete category'),
+            backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating,
+          ));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
   }
 
   @override
