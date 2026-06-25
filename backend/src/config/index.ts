@@ -6,7 +6,7 @@ const config = {
   jwtSecret: process.env.JWT_SECRET || 'default-jwt-secret',
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'default-jwt-refresh-secret',
   jwtAccessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
-  jwtRefreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
+  jwtRefreshExpiry: process.env.JWT_REFRESH_EXPIRY || '365d',
   jwtResetExpiry: process.env.JWT_RESET_EXPIRY || '1h',
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
