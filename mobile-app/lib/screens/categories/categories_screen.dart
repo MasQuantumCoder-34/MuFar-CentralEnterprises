@@ -21,6 +21,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   final ApiClient _api = ApiClient();
   List<Category> _categories = [];
   bool _loading = true;
+  String _search = '';
+
+  List<Category> get _filteredCategories {
+    if (_search.isEmpty) return _categories;
+    final q = _search.toLowerCase();
+    return _categories.where((c) =>
+      c.name.toLowerCase().contains(q) ||
+      (c.description?.toLowerCase().contains(q) ?? false)
+    ).toList();
+  }
 
   @override
   void initState() {
@@ -105,17 +115,53 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const LoadingWidget()
-          : _categories.isEmpty
-              ? const Center(child: Text('No categories'))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
-                    itemCount: _categories.length,
-                    itemBuilder: (_, i) {
-                      final cat = _categories[i];
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search categories...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                filled: true,
+                fillColor: AppTheme.surfaceVariant,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onChanged: (v) => setState(() => _search = v),
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const LoadingWidget()
+                : _filteredCategories.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _search.isNotEmpty ? Icons.search_off : Icons.category_outlined,
+                              size: 48,
+                              color: AppTheme.textTertiary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _search.isNotEmpty ? 'No categories matching "$_search"' : 'No categories',
+                              style: const TextStyle(color: AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _load,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
+                          itemCount: _filteredCategories.length,
+                          itemBuilder: (_, i) {
+                            final cat = _filteredCategories[i];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Card(
@@ -193,8 +239,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         ),
                       );
                     },
-                  ),
                 ),
+              ),
+            ),
+          ],
+        ),
     );
   }
 }

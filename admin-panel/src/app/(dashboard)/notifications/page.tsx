@@ -78,8 +78,8 @@ export default function NotificationsPage() {
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="new_order">New Order</SelectItem>
-              <SelectItem value="order_processing">Processing</SelectItem>
-              <SelectItem value="order_out_for_delivery">Out for Delivery</SelectItem>
+              {/* <SelectItem value="order_processing">Processing</SelectItem>
+              <SelectItem value="order_out_for_delivery">Out for Delivery</SelectItem> */}
               <SelectItem value="order_delivered">Delivered</SelectItem>
               <SelectItem value="order_cancelled">Cancelled</SelectItem>
               <SelectItem value="low_stock">Low Stock</SelectItem>
