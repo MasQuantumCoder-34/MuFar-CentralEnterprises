@@ -24,7 +24,16 @@ class AuthProvider extends ChangeNotifier {
     }
     _status = AuthStatus.authenticated;
     notifyListeners();
-    loadProfile();
+    final result = await _authService.getProfile();
+    if (result.success && result.data != null) {
+      _user = result.data;
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+    } else {
+      _user = null;
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+    }
   }
 
   Future<bool> login(String email, String password) async {

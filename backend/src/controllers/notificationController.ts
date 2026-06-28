@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import Notification from '../models/Notification';
 import { AuthRequest } from '../middleware/auth';
+import { UserRole } from '@mufar-commerce/shared';
 
 const getNotifications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -8,7 +9,10 @@ const getNotifications = async (req: AuthRequest, res: Response, next: NextFunct
     const limit = parseInt(req.query.limit as string) || 20;
     const type = req.query.type as string | undefined;
 
-    const filter: Record<string, any> = { user: req.user?._id };
+    const isAdmin = req.user?.role === UserRole.ADMIN || req.user?.role === UserRole.SUPER_ADMIN || req.user?.role === UserRole.MANAGER;
+
+    const filter: Record<string, any> = {};
+    if (!isAdmin) filter.user = req.user?._id;
     if (type) filter.type = type;
 
     const total = await Notification.countDocuments(filter);
@@ -32,8 +36,12 @@ const getNotifications = async (req: AuthRequest, res: Response, next: NextFunct
 
 const markAsRead = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const isAdmin = req.user?.role === UserRole.ADMIN || req.user?.role === UserRole.SUPER_ADMIN || req.user?.role === UserRole.MANAGER;
+    const filter: Record<string, any> = { _id: req.params.id };
+    if (!isAdmin) filter.user = req.user?._id;
+
     const notification = await Notification.findOneAndUpdate(
-      { _id: req.params.id, user: req.user?._id },
+      filter,
       { isRead: true },
       { new: true }
     );
@@ -55,8 +63,12 @@ const markAsRead = async (req: AuthRequest, res: Response, next: NextFunction): 
 
 const markAllAsRead = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const isAdmin = req.user?.role === UserRole.ADMIN || req.user?.role === UserRole.SUPER_ADMIN || req.user?.role === UserRole.MANAGER;
+    const filter: Record<string, any> = { isRead: false };
+    if (!isAdmin) filter.user = req.user?._id;
+
     await Notification.updateMany(
-      { user: req.user?._id, isRead: false },
+      filter,
       { isRead: true }
     );
 
@@ -71,10 +83,11 @@ const markAllAsRead = async (req: AuthRequest, res: Response, next: NextFunction
 
 const getUnreadCount = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const count = await Notification.countDocuments({
-      user: req.user?._id,
-      isRead: false,
-    });
+    const isAdmin = req.user?.role === UserRole.ADMIN || req.user?.role === UserRole.SUPER_ADMIN || req.user?.role === UserRole.MANAGER;
+    const filter: Record<string, any> = { isRead: false };
+    if (!isAdmin) filter.user = req.user?._id;
+
+    const count = await Notification.countDocuments(filter);
 
     res.status(200).json({
       success: true,
