@@ -90,5 +90,10 @@ productSchema.index({ name: 'text' });
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1 });
 
+// Drop legacy sku unique index if it still exists from a previous schema
+mongoose.connection.once('open', () => {
+  Product.collection.dropIndex('sku_1').catch(() => {});
+});
+
 const Product = mongoose.model<IProductDocument>('Product', productSchema);
 export default Product;

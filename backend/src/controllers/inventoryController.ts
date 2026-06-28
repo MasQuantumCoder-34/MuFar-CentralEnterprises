@@ -21,7 +21,7 @@ const getInventoryLogs = async (req: AuthRequest, res: Response, next: NextFunct
     const totalPages = Math.ceil(total / limit);
 
     const logs = await InventoryLog.find(filter)
-      .populate('product', 'name sku')
+      .populate('product', 'name pieces')
       .populate('performedBy', 'name email')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)

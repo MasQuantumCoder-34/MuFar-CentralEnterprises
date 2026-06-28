@@ -130,19 +130,27 @@ class ApiClient {
       final email = await _storage.read(key: _emailKey);
       final password = await _storage.read(key: _passwordKey);
       if (email == null || password == null) return null;
-      final res = await http.post(
-        Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.login}'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      ).timeout(const Duration(seconds: 15));
-      if (res.statusCode == 200) {
-        final body = jsonDecode(res.body) as Map<String, dynamic>;
-        if (body['success'] == true) {
-          final data = body['data'] as Map<String, dynamic>;
-          final access = data['accessToken'] as String;
-          final refresh = data['refreshToken'] as String;
-          await saveTokens(access, refresh);
-          return access;
+      for (int attempt = 0; attempt < 2; attempt++) {
+        try {
+          final res = await http.post(
+            Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.login}'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': password}),
+          ).timeout(const Duration(seconds: 15));
+          if (res.statusCode == 200) {
+            final body = jsonDecode(res.body) as Map<String, dynamic>;
+            if (body['success'] == true) {
+              final data = body['data'] as Map<String, dynamic>;
+              final access = data['accessToken'] as String;
+              final refresh = data['refreshToken'] as String;
+              await saveTokens(access, refresh);
+              return access;
+            }
+          }
+          if (res.statusCode == 401 || res.statusCode == 403) return null;
+        } catch (_) {
+          if (attempt == 1) return null;
+          await Future.delayed(const Duration(seconds: 1));
         }
       }
       return null;
