@@ -111,56 +111,56 @@ class _ProductsScreenState extends State<ProductsScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const LoadingWidget()
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search products...', prefixIcon: const Icon(Icons.search, size: 20),
-                      filled: true, fillColor: AppTheme.surfaceVariant,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+      body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search products...', prefixIcon: const Icon(Icons.search, size: 20),
+                  filled: true, fillColor: AppTheme.surfaceVariant,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onChanged: (v) { _search = v; _loadData(); },
+              ),
+            ),
+            SizedBox(
+              height: 44,
+              child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: const Text('All', style: TextStyle(fontSize: 12)),
+                      selected: _selectedCategory == null,
+                      onSelected: (_) => setState(() => _selectedCategory = null),
+                      selectedColor: AppTheme.primary,
+                      backgroundColor: AppTheme.surfaceVariant,
+                      labelStyle: TextStyle(color: _selectedCategory == null ? Colors.white : AppTheme.textPrimary),
                     ),
-                    onChanged: (v) { _search = v; _loadData(); },
                   ),
-                ),
-                SizedBox(
-                  height: 44,
-                  child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: const Text('All', style: TextStyle(fontSize: 12)),
-                          selected: _selectedCategory == null,
-                          onSelected: (_) => setState(() => _selectedCategory = null),
-                          selectedColor: AppTheme.primary,
-                          backgroundColor: AppTheme.surfaceVariant,
-                          labelStyle: TextStyle(color: _selectedCategory == null ? Colors.white : AppTheme.textPrimary),
-                        ),
+                  ..._categories.map((cat) {
+                    final isSelected = _selectedCategory?.id == cat.id;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(cat.name, style: const TextStyle(fontSize: 12)),
+                        selected: isSelected,
+                        onSelected: (_) => setState(() => _selectedCategory = cat),
+                        selectedColor: AppTheme.primary,
+                        backgroundColor: AppTheme.surfaceVariant,
+                        labelStyle: TextStyle(color: isSelected ? Colors.white : AppTheme.textPrimary),
                       ),
-                      ..._categories.map((cat) {
-                        final isSelected = _selectedCategory?.id == cat.id;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            label: Text(cat.name, style: const TextStyle(fontSize: 12)),
-                            selected: isSelected,
-                            onSelected: (_) => setState(() => _selectedCategory = cat),
-                            selectedColor: AppTheme.primary,
-                            backgroundColor: AppTheme.surfaceVariant,
-                            labelStyle: TextStyle(color: isSelected ? Colors.white : AppTheme.textPrimary),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _filteredProducts.isEmpty
+                    );
+                  }),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? const LoadingWidget()
+                  : _filteredProducts.isEmpty
                       ? const Center(child: Text('No products found'))
                       : RefreshIndicator(
                           onRefresh: _loadData,

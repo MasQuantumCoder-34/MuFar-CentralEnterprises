@@ -248,7 +248,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: _step == 1,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _step > 1) setState(() => _step--);
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Create Order'),
         leading: _step > 1
@@ -415,6 +420,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               ),
             )
           : null,
+      ),
     );
   }
 

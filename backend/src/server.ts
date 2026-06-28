@@ -116,6 +116,10 @@ const autoSeed = async (): Promise<void> => {
       lowStockThreshold: 10,
     });
     console.log('Auto-seed: default settings created');
+  } else if (settingsExist.companyName === 'Mufar Technologies') {
+    settingsExist.companyName = 'Central Enterprises';
+    await settingsExist.save();
+    console.log('Auto-seed: updated company name from Mufar Technologies to Central Enterprises');
   }
 };
 
