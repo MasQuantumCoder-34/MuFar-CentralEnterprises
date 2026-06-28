@@ -15,17 +15,9 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final ApiClient _api = ApiClient();
   List<Map<String, dynamic>> _notifications = [];
+  Set<String> _availableTypes = {};
   bool _loading = true;
   String? _typeFilter;
-
-  static const _allTypes = [
-    'new_order',
-    'order_processing',
-    'order_out_for_delivery',
-    'order_delivered',
-    'order_cancelled',
-    'low_stock',
-  ];
 
   @override
   void initState() {
@@ -44,6 +36,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         final list = body['data'] as List;
         setState(() {
           _notifications = list.map((e) => e as Map<String, dynamic>).toList();
+          _availableTypes = _notifications.map((n) => n['type'] as String? ?? '').where((t) => t.isNotEmpty).toSet();
         });
       }
     } catch (_) {}
@@ -97,6 +90,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final types = [null, ..._availableTypes];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
@@ -125,28 +120,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: Column(
         children: [
-          Container(
-            height: 44,
-            color: AppTheme.surface,
-            child: ListView(
-              scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              children: [null, ..._allTypes].map((t) {
-                final isSelected = _typeFilter == t;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: FilterChip(
-                    avatar: Icon(_typeIcon(t), size: 13, color: isSelected ? Colors.white : _typeColor(t)),
-                    label: Text(_typeLabel(t), style: TextStyle(fontSize: 10, color: isSelected ? Colors.white : AppTheme.textPrimary)),
-                    selected: isSelected, showCheckmark: false,
-                    selectedColor: _typeColor(t).withOpacity(0.8),
-                    backgroundColor: AppTheme.surfaceVariant,
-                    side: BorderSide.none,
-                    onSelected: (_) { setState(() => _typeFilter = t); _load(); },
-                  ),
-                );
-              }).toList(),
+          if (types.length > 1)
+            Container(
+              height: 44,
+              color: AppTheme.surface,
+              child: ListView(
+                scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                children: types.map((t) {
+                  final isSelected = _typeFilter == t;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: FilterChip(
+                      avatar: Icon(_typeIcon(t), size: 13, color: isSelected ? Colors.white : _typeColor(t)),
+                      label: Text(_typeLabel(t), style: TextStyle(fontSize: 10, color: isSelected ? Colors.white : AppTheme.textPrimary)),
+                      selected: isSelected, showCheckmark: false,
+                      selectedColor: _typeColor(t).withOpacity(0.8),
+                      backgroundColor: AppTheme.surfaceVariant,
+                      side: BorderSide.none,
+                      onSelected: (_) { setState(() => _typeFilter = t); _load(); },
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
           Expanded(
             child: _loading
                 ? const LoadingWidget()
