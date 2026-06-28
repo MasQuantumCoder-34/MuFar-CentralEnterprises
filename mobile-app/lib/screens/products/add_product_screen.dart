@@ -131,10 +131,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
             if (match >= 0) _selectedCategoryId = cats[match].id;
           }
         });
+        return;
       }
-    } catch (_) {
-      setState(() => _loadingCategories = false);
-    }
+    } catch (_) {}
+    setState(() => _loadingCategories = false);
   }
 
   List<String> get _remainingSizeNames =>

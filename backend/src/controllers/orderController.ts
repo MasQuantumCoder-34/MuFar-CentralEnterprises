@@ -154,6 +154,34 @@ const createOrder = async (req: AuthRequest, res: Response, next: NextFunction):
     const orderNumber = generateOrderNumber();
     const invoiceNumber = generateInvoiceNumber();
 
+    for (const item of items) {
+      const product = await Product.findById(item.product);
+      if (product) {
+        const oldStock = product.stockQuantity;
+        product.stockQuantity -= item.quantity;
+        product.salesCount += item.quantity;
+
+        if (item.size && product.sizes && product.sizes.length > 0) {
+          const sizeEntry = product.sizes.find((s: any) => s.name === item.size);
+          if (sizeEntry) sizeEntry.stockQuantity -= item.quantity;
+        }
+
+        await product.save();
+
+        await InventoryLog.create({
+          product: product._id,
+          action: InventoryAction.ORDER_DEDUCTION,
+          quantity: item.quantity,
+          previousStock: oldStock,
+          newStock: product.stockQuantity,
+          referenceId: orderNumber,
+          referenceModel: 'Order',
+          performedBy: req.user?._id,
+          notes: `Stock deducted for new Order ${orderNumber}`,
+        });
+      }
+    }
+
     const order = await Order.create({
       orderNumber,
       invoiceNumber,
@@ -252,30 +280,6 @@ const updateOrderStatus = async (req: AuthRequest, res: Response, next: NextFunc
 
     const previousStatus = order.status;
     order.status = status as OrderStatus;
-
-    if (status === OrderStatus.PROCESSING && previousStatus === OrderStatus.PENDING) {
-      for (const item of order.items) {
-        const product = await Product.findById(item.product);
-        if (product) {
-          const oldStock = product.stockQuantity;
-          product.stockQuantity -= item.quantity;
-          product.salesCount += item.quantity;
-          await product.save();
-
-          await InventoryLog.create({
-            product: product._id,
-            action: InventoryAction.ORDER_DEDUCTION,
-            quantity: item.quantity,
-            previousStock: oldStock,
-            newStock: product.stockQuantity,
-            referenceId: String(order._id),
-            referenceModel: 'Order',
-            performedBy: req.user?._id,
-            notes: `Stock deducted for Order ${order.orderNumber}`,
-          });
-        }
-      }
-    }
 
     if (status === OrderStatus.DELIVERED) {
       order.deliveredAt = new Date().toISOString();
@@ -384,12 +388,16 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
       return;
     }
 
-    if (order.status === OrderStatus.PROCESSING && items) {
+    if ((order.status === OrderStatus.PROCESSING || order.status === OrderStatus.PENDING) && items) {
       for (const oldItem of order.items) {
         const product = await Product.findById(oldItem.product);
         if (product) {
           product.stockQuantity += oldItem.quantity;
           product.salesCount -= oldItem.quantity;
+          if (oldItem.size && product.sizes && product.sizes.length > 0) {
+            const sizeEntry = product.sizes.find((s: any) => s.name === oldItem.size);
+            if (sizeEntry) sizeEntry.stockQuantity += oldItem.quantity;
+          }
           await product.save();
         }
       }
@@ -436,12 +444,16 @@ const updateOrder = async (req: AuthRequest, res: Response, next: NextFunction):
         console.warn(`Update order ${order.orderNumber}: skipped items - ${skipped.join(', ')}`);
       }
 
-      if (order.status === OrderStatus.PROCESSING) {
+      if (order.status === OrderStatus.PROCESSING || order.status === OrderStatus.PENDING) {
         for (const newItem of orderItems) {
           const product = await Product.findById(newItem.product);
           if (product) {
             product.stockQuantity -= newItem.quantity;
             product.salesCount += newItem.quantity;
+            if (newItem.size && product.sizes && product.sizes.length > 0) {
+              const sizeEntry = product.sizes.find((s: any) => s.name === newItem.size);
+              if (sizeEntry) sizeEntry.stockQuantity -= newItem.quantity;
+            }
             await product.save();
           }
         }
