@@ -49,8 +49,8 @@ class _MainShellState extends State<MainShell> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
+        if (_currentIndex != 0) {
+          setState(() => _currentIndex = 0);
         } else if (_lastBackPress == null ||
             DateTime.now().difference(_lastBackPress!) > const Duration(seconds: 2)) {
           _lastBackPress = DateTime.now();
