@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'orders/orders_screen.dart';
@@ -29,6 +30,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+  DateTime? _lastBackPress;
   final _pages = <Widget>[
     const DashboardScreen(),
     const OrdersScreen(),
@@ -43,7 +45,27 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+        } else if (_lastBackPress == null ||
+            DateTime.now().difference(_lastBackPress!) > const Duration(seconds: 2)) {
+          _lastBackPress = DateTime.now();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Press back again to exit'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       drawer: _buildDrawer(),
       body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: NavigationBar(
@@ -57,6 +79,7 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category, color: AppTheme.primary), label: 'Categories'),
           NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people, color: AppTheme.primary), label: 'Clients'),
         ],
+      ),
       ),
     );
   }

@@ -69,15 +69,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(user?.displayName ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
                 if (user?.email != null)
                   Text(user!.email!, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text('$_companyName \u2022 v1.0.0', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                ),
               ],
             ),
           ),

@@ -99,21 +99,28 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reports'),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppTheme.primary, unselectedLabelColor: AppTheme.textSecondary,
-          indicatorColor: AppTheme.primary,
-          tabs: const [Tab(text: 'Sales'), Tab(text: 'Inventory'), Tab(text: 'Customers')],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      appBar: AppBar(title: const Text('Reports')),
+      body: Column(
         children: [
-          _buildSalesTab(),
-          _buildInventoryTab(),
-          _buildCustomersTab(),
+          Container(
+            color: AppTheme.surface,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppTheme.primary, unselectedLabelColor: AppTheme.textSecondary,
+              indicatorColor: AppTheme.primary,
+              tabs: const [Tab(text: 'Sales'), Tab(text: 'Inventory'), Tab(text: 'Customers')],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSalesTab(),
+                _buildInventoryTab(),
+                _buildCustomersTab(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -139,17 +146,6 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   }
 
   Widget _salesTab() {
-    if (_salesBreakdown.isEmpty) {
-      return Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.bar_chart, size: 48, color: AppTheme.textTertiary.withOpacity(0.5)),
-          const SizedBox(height: 12),
-          const Text('No sales data for this period', style: TextStyle(color: AppTheme.textSecondary)),
-          const SizedBox(height: 4),
-          const Text('Try changing the time period above', style: TextStyle(fontSize: 12, color: AppTheme.textTertiary)),
-        ]),
-      );
-    }
     return Column(
       children: [
         Padding(
@@ -172,9 +168,25 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             ],
           ),
         ),
+        if (_salesBreakdown.isEmpty)
+          const Expanded(
+            child: Center(child: Text('No sales data for this period', style: TextStyle(color: AppTheme.textSecondary))),
+          )
+        else
+          Expanded(
+            child: _salesContent(),
+          ),
+      ],
+    );
+  }
+
+  Widget _salesContent() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      children: [
         if (_salesSummary.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
                 _summaryCard('Orders', '${_salesSummary['totalOrders'] ?? 0}'),
@@ -187,64 +199,54 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           ),
         if (_salesBreakdown.length >= 2)
           SizedBox(
-            height: 180,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: BarChart(
-                    BarChartData(
-                      gridData: FlGridData(show: true, drawVerticalLine: false),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36, getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(fontSize: 8)))),
-                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
-                          final i = v.toInt();
-                          if (i >= 0 && i < _salesBreakdown.length) {
-                            final label = _salesBreakdown[i]['period'] as String? ?? '';
-                            return Text(label.length > 5 ? label.substring(label.length - 5) : label, style: const TextStyle(fontSize: 7));
-                          }
-                          return const Text('');
-                        })),
-                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      ),
-                      borderData: FlBorderData(show: false),
-                      barGroups: _salesBreakdown.asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [
-                        BarChartRodData(toY: (e.value['totalRevenue'] as num?)?.toDouble() ?? 0, color: AppTheme.primary, width: 14, borderRadius: const BorderRadius.vertical(top: Radius.circular(4))),
-                      ])).toList(),
+            height: 200,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: BarChart(
+                  BarChartData(
+                    gridData: FlGridData(show: true, drawVerticalLine: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36, getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(fontSize: 8)))),
+                      bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
+                        final i = v.toInt();
+                        if (i >= 0 && i < _salesBreakdown.length) {
+                          final label = _salesBreakdown[i]['period'] as String? ?? '';
+                          return Text(label.length > 5 ? label.substring(label.length - 5) : label, style: const TextStyle(fontSize: 7));
+                        }
+                        return const Text('');
+                      })),
+                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
+                    borderData: FlBorderData(show: false),
+                    barGroups: _salesBreakdown.asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [
+                      BarChartRodData(toY: (e.value['totalRevenue'] as num?)?.toDouble() ?? 0, color: AppTheme.primary, width: 14, borderRadius: const BorderRadius.vertical(top: Radius.circular(4))),
+                    ])).toList(),
                   ),
                 ),
               ),
             ),
           ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            itemCount: _salesBreakdown.length,
-            itemBuilder: (_, i) {
-              final d = _salesBreakdown[i];
-              final rev = (d['totalRevenue'] as num?)?.toDouble() ?? 0;
-              final orders = d['totalOrders'] ?? 0;
-              return Card(
-                margin: const EdgeInsets.only(bottom: 4),
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(children: [
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(d['period'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                        Text('$orders orders', style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
-                      ]),
-                    ),
-                    Text('₹${rev.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primary)),
+        ..._salesBreakdown.map((d) {
+          final rev = (d['totalRevenue'] as num?)?.toDouble() ?? 0;
+          final orders = d['totalOrders'] ?? 0;
+          return Card(
+            margin: const EdgeInsets.only(bottom: 4),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(d['period'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                    Text('$orders orders', style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
                   ]),
                 ),
-              );
-            },
-          ),
-        ),
+                Text('₹${rev.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primary)),
+              ]),
+            ),
+          );
+        }),
       ],
     );
   }

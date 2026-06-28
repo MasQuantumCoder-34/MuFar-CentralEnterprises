@@ -6,9 +6,9 @@ export const PAGINATION = {
 
 export const RATE_LIMIT = {
   WINDOW_MS: 15 * 60 * 1000,
-  MAX_REQUESTS: 100,
+  MAX_REQUESTS: 500,
   AUTH_WINDOW_MS: 60 * 1000,
-  AUTH_MAX_REQUESTS: 20,
+  AUTH_MAX_REQUESTS: 50,
 };
 
 export const JWT = {
