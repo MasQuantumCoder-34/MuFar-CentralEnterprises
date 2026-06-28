@@ -31,6 +31,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   bool _loadingSales = true;
   bool _loadingInventory = true;
   bool _loadingCustomers = true;
+  bool _salesError = false;
+  bool _invError = false;
+  bool _custError = false;
 
   @override
   void initState() {
@@ -48,7 +51,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   }
 
   Future<void> _loadSales() async {
-    setState(() => _loadingSales = true);
+    setState(() { _loadingSales = true; _salesError = false; });
     try {
       final res = await _api.get('/reports/sales', queryParams: {'type': _period});
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -58,13 +61,17 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           _salesSummary = data['summary'] as Map<String, dynamic>? ?? {};
           _salesBreakdown = (data['breakdown'] as List?)?.map((e) => e as Map<String, dynamic>).toList() ?? [];
         });
+      } else {
+        _salesError = true;
       }
-    } catch (_) {}
+    } catch (_) {
+      _salesError = true;
+    }
     setState(() => _loadingSales = false);
   }
 
   Future<void> _loadInventory() async {
-    setState(() => _loadingInventory = true);
+    setState(() { _loadingInventory = true; _invError = false; });
     try {
       final res = await _api.get('/reports/inventory');
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -75,13 +82,17 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           _lowStock = (data['lowStockProducts'] as List?)?.map((e) => e as Map<String, dynamic>).toList() ?? [];
           _outOfStock = (data['outOfStockProducts'] as List?)?.map((e) => e as Map<String, dynamic>).toList() ?? [];
         });
+      } else {
+        _invError = true;
       }
-    } catch (_) {}
+    } catch (_) {
+      _invError = true;
+    }
     setState(() => _loadingInventory = false);
   }
 
   Future<void> _loadCustomers() async {
-    setState(() => _loadingCustomers = true);
+    setState(() { _loadingCustomers = true; _custError = false; });
     try {
       final res = await _api.get('/reports/customers');
       final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -91,8 +102,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           _totalClients = (data['totalClients'] as num?)?.toInt() ?? 0;
           _topCustomers = (data['topCustomers'] as List?)?.map((e) => e as Map<String, dynamic>).toList() ?? [];
         });
+      } else {
+        _custError = true;
       }
-    } catch (_) {}
+    } catch (_) {
+      _custError = true;
+    }
     setState(() => _loadingCustomers = false);
   }
 
@@ -115,9 +130,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildSalesTab(),
-                _buildInventoryTab(),
-                _buildCustomersTab(),
+                _loadingSales ? const LoadingWidget() : _salesTab(),
+                _loadingInventory ? const LoadingWidget() : _inventoryTab(),
+                _loadingCustomers ? const LoadingWidget() : _customersTab(),
               ],
             ),
           ),
@@ -126,7 +141,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _summaryCard(String label, String value, {Color? color}) {
+  Widget _statCard(String label, String value, {Color? color}) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
@@ -146,18 +161,34 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   }
 
   Widget _salesTab() {
+    if (_salesError) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 40, color: AppTheme.textTertiary),
+            const SizedBox(height: 8),
+            const Text('Failed to load sales data', style: TextStyle(color: AppTheme.textSecondary)),
+            const SizedBox(height: 12),
+            FilledButton.tonal(onPressed: _loadSales, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: Row(
             children: [
-              DropdownButton<String>(
-                value: _period, underline: const SizedBox(),
-                items: ['daily', 'weekly', 'monthly', 'yearly'].map((p) => DropdownMenuItem(
-                  value: p, child: Text(p[0].toUpperCase() + p.substring(1)),
-                )).toList(),
-                onChanged: (v) { setState(() => _period = v!); _loadSales(); },
+              IntrinsicWidth(
+                child: DropdownButton<String>(
+                  value: _period, underline: const SizedBox(), isDense: true,
+                  items: ['daily', 'weekly', 'monthly', 'yearly'].map((p) => DropdownMenuItem(
+                    value: p, child: Text(p[0].toUpperCase() + p.substring(1)),
+                  )).toList(),
+                  onChanged: (v) { setState(() => _period = v!); _loadSales(); },
+                ),
               ),
               const Spacer(),
               OutlinedButton.icon(
@@ -168,94 +199,103 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             ],
           ),
         ),
-        if (_salesBreakdown.isEmpty)
+        if (_salesBreakdown.isEmpty && _salesSummary.isEmpty)
           const Expanded(
             child: Center(child: Text('No sales data for this period', style: TextStyle(color: AppTheme.textSecondary))),
           )
         else
           Expanded(
-            child: _salesContent(),
-          ),
-      ],
-    );
-  }
-
-  Widget _salesContent() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      children: [
-        if (_salesSummary.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
               children: [
-                _summaryCard('Orders', '${_salesSummary['totalOrders'] ?? 0}'),
-                const SizedBox(width: 8),
-                _summaryCard('Revenue', '₹${(_salesSummary['totalRevenue'] as num?)?.toDouble() ?? 0}', color: AppTheme.success),
-                const SizedBox(width: 8),
-                _summaryCard('Avg Order', '₹${(_salesSummary['averageOrderValue'] as num?)?.toDouble() ?? 0}', color: AppTheme.accent),
+                if (_salesSummary.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        _statCard('Orders', '${_salesSummary['totalOrders'] ?? 0}'),
+                        const SizedBox(width: 8),
+                        _statCard('Revenue', '₹${(_salesSummary['totalRevenue'] as num?)?.toDouble() ?? 0}', color: AppTheme.success),
+                        const SizedBox(width: 8),
+                        _statCard('Avg Order', '₹${(_salesSummary['averageOrderValue'] as num?)?.toDouble() ?? 0}', color: AppTheme.accent),
+                      ],
+                    ),
+                  ),
+                if (_salesBreakdown.length >= 2)
+                  SizedBox(
+                    height: 200,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
+                        child: BarChart(
+                          BarChartData(
+                            gridData: FlGridData(show: true, drawVerticalLine: false),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36, getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(fontSize: 8)))),
+                              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
+                                final i = v.toInt();
+                                if (i >= 0 && i < _salesBreakdown.length) {
+                                  final label = _salesBreakdown[i]['period'] as String? ?? '';
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(label.length > 5 ? label.substring(label.length - 5) : label, style: const TextStyle(fontSize: 7)),
+                                  );
+                                }
+                                return const Text('');
+                              })),
+                              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            ),
+                            borderData: FlBorderData(show: false),
+                            barGroups: _salesBreakdown.asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [
+                              BarChartRodData(toY: (e.value['totalRevenue'] as num?)?.toDouble() ?? 0, color: AppTheme.primary, width: 14, borderRadius: const BorderRadius.vertical(top: Radius.circular(4))),
+                            ])).toList(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ..._salesBreakdown.map((d) {
+                  final rev = (d['totalRevenue'] as num?)?.toDouble() ?? 0;
+                  final orders = d['totalOrders'] ?? 0;
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Row(children: [
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(d['period'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                            Text('$orders orders', style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
+                          ]),
+                        ),
+                        Text('₹${rev.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primary)),
+                      ]),
+                    ),
+                  );
+                }),
               ],
             ),
           ),
-        if (_salesBreakdown.length >= 2)
-          SizedBox(
-            height: 200,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: BarChart(
-                  BarChartData(
-                    gridData: FlGridData(show: true, drawVerticalLine: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36, getTitlesWidget: (v, _) => Text('${v.toInt()}', style: const TextStyle(fontSize: 8)))),
-                      bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
-                        final i = v.toInt();
-                        if (i >= 0 && i < _salesBreakdown.length) {
-                          final label = _salesBreakdown[i]['period'] as String? ?? '';
-                          return Text(label.length > 5 ? label.substring(label.length - 5) : label, style: const TextStyle(fontSize: 7));
-                        }
-                        return const Text('');
-                      })),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    barGroups: _salesBreakdown.asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [
-                      BarChartRodData(toY: (e.value['totalRevenue'] as num?)?.toDouble() ?? 0, color: AppTheme.primary, width: 14, borderRadius: const BorderRadius.vertical(top: Radius.circular(4))),
-                    ])).toList(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ..._salesBreakdown.map((d) {
-          final rev = (d['totalRevenue'] as num?)?.toDouble() ?? 0;
-          final orders = d['totalOrders'] ?? 0;
-          return Card(
-            margin: const EdgeInsets.only(bottom: 4),
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Row(children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(d['period'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                    Text('$orders orders', style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
-                  ]),
-                ),
-                Text('₹${rev.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.primary)),
-              ]),
-            ),
-          );
-        }),
       ],
     );
   }
 
-  Widget _buildSalesTab() {
-    return _loadingSales ? const LoadingWidget() : _salesTab();
-  }
-
   Widget _inventoryTab() {
+    if (_invError) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 40, color: AppTheme.textTertiary),
+            const SizedBox(height: 8),
+            const Text('Failed to load inventory data', style: TextStyle(color: AppTheme.textSecondary)),
+            const SizedBox(height: 12),
+            FilledButton.tonal(onPressed: _loadInventory, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
@@ -264,11 +304,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             padding: const EdgeInsets.only(bottom: 12),
             child: Row(
               children: [
-                _summaryCard('Total', '${_invSummary['totalProducts'] ?? 0}'),
+                _statCard('Total', '${_invSummary['totalProducts'] ?? 0}'),
                 const SizedBox(width: 8),
-                _summaryCard('Low Stock', '${_invSummary['lowStockCount'] ?? 0}', color: AppTheme.accent),
+                _statCard('Low Stock', '${_invSummary['lowStockCount'] ?? 0}', color: AppTheme.accent),
                 const SizedBox(width: 8),
-                _summaryCard('Out of Stock', '${_invSummary['outOfStockCount'] ?? 0}', color: AppTheme.error),
+                _statCard('Out of Stock', '${_invSummary['outOfStockCount'] ?? 0}', color: AppTheme.error),
               ],
             ),
           ),
@@ -297,11 +337,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           Padding(padding: EdgeInsets.only(top: 12, bottom: 6), child: Text('Out of Stock', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.error))),
           ..._outOfStock.map((d) => _invItem(d, isLow: false)),
         ],
-        if (_lowStock.isEmpty && _outOfStock.isEmpty)
+        if (_lowStock.isEmpty && _outOfStock.isEmpty && _invSummary.isNotEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 40),
             child: Center(child: Text('All products are well stocked', style: TextStyle(color: AppTheme.textSecondary))),
           ),
+        if (_invSummary.isEmpty)
+          const Center(child: Text('No inventory data', style: TextStyle(color: AppTheme.textSecondary))),
       ],
     );
   }
@@ -321,11 +363,21 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildInventoryTab() {
-    return _loadingInventory ? const LoadingWidget() : _inventoryTab();
-  }
-
   Widget _customersTab() {
+    if (_custError) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 40, color: AppTheme.textTertiary),
+            const SizedBox(height: 8),
+            const Text('Failed to load customer data', style: TextStyle(color: AppTheme.textSecondary)),
+            const SizedBox(height: 12),
+            FilledButton.tonal(onPressed: _loadCustomers, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
@@ -375,9 +427,5 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           ),
       ],
     );
-  }
-
-  Widget _buildCustomersTab() {
-    return _loadingCustomers ? const LoadingWidget() : _customersTab();
   }
 }
