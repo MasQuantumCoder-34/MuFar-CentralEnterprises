@@ -9,7 +9,7 @@ router.use(protect);
 
 router.get('/admin', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), getAdminDashboard);
 router.get('/client', getClientDashboard);
-router.get('/revenue-trend', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), getRevenueTrend);
-router.get('/order-trend', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), getOrderTrend);
+router.get('/revenue-trend', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER), getRevenueTrend);
+router.get('/order-trend', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER), getOrderTrend);
 
 export = router;

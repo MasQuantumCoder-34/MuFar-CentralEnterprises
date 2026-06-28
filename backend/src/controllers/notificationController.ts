@@ -6,8 +6,10 @@ const getNotifications = async (req: AuthRequest, res: Response, next: NextFunct
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const type = req.query.type as string | undefined;
 
-    const filter = { user: req.user?._id };
+    const filter: Record<string, any> = { user: req.user?._id };
+    if (type) filter.type = type;
 
     const total = await Notification.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
