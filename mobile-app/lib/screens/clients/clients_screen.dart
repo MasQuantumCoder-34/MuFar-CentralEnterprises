@@ -82,6 +82,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Clients'),
+        leading: IconButton(icon: const Icon(Icons.menu), onPressed: () => Scaffold.of(context).openDrawer()),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_circle_outline),

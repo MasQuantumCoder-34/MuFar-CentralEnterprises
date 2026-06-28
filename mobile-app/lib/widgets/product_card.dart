@@ -27,8 +27,9 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 1.1,
+            SizedBox(
+              height: 130,
+              width: double.infinity,
               child: AppNetworkImage(
                 imageUrl: product.images.isNotEmpty ? product.images.first : null,
                 borderRadius: 0,
@@ -37,47 +38,50 @@ class ProductCard extends StatelessWidget {
             ),
             if (isOutOfStock)
               Container(
+                height: 20,
                 color: Colors.black87,
-                padding: const EdgeInsets.symmetric(vertical: 3),
                 child: const Center(
                   child: Text('Out of Stock',
                       style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(product.name,
-                      maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTheme.textPrimary)),
-                  const SizedBox(height: 2),
-                  if (product.sizes.isNotEmpty)
-                    Text(
-                      product.sizes.map((s) => '${s.name}:${s.stockQuantity}').join('  '),
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 10, color: isOutOfStock ? AppTheme.error : AppTheme.textSecondary),
-                    ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text('\u20B9${displayPrice.toStringAsFixed(0)}',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(product.name,
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: AppTheme.textPrimary)),
+                    const SizedBox(height: 1),
+                    if (product.sizes.isNotEmpty)
+                      Text(
+                        product.sizes.map((s) => '${s.name}:${s.stockQuantity}').join('  '),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 9, color: isOutOfStock ? AppTheme.error : AppTheme.textSecondary),
                       ),
-                      if (displayMrp > displayPrice) ...[
-                        const SizedBox(width: 4),
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
                         Flexible(
-                          child: Text('\u20B9${displayMrp.toStringAsFixed(0)}',
+                          child: Text('\u20B9${displayPrice.toStringAsFixed(0)}',
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: AppTheme.textTertiary, decoration: TextDecoration.lineThrough, fontSize: 10)),
+                              style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13)),
                         ),
+                        if (displayMrp > displayPrice) ...[
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text('\u20B9${displayMrp.toStringAsFixed(0)}',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: AppTheme.textTertiary, decoration: TextDecoration.lineThrough, fontSize: 10)),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

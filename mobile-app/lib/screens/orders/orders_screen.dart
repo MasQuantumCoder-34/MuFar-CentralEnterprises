@@ -63,6 +63,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Orders'),
+        leading: IconButton(icon: const Icon(Icons.menu), onPressed: () => Scaffold.of(context).openDrawer()),
         actions: [
           IconButton(
             icon: Icon(_showFilters ? Icons.filter_alt_off : Icons.filter_alt_outlined),
